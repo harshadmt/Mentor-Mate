@@ -79,7 +79,7 @@ const AdminDashboard = () => {
         {/* Logo */}
         <div className="hidden md:block mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-600 flex items-center justify-center">
               <Shield className="text-white" size={20} />
             </div>
             <div>
@@ -99,7 +99,7 @@ const AdminDashboard = () => {
               onClick={() => navigate(to)}
               className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left w-full transition-all duration-200 relative ${
                 active
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md transform scale-105"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-600 text-white shadow-md transform scale-105"
                   : danger
                   ? "text-red-500 hover:bg-red-50 hover:shadow-sm"
                   : "text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:transform hover:scale-105"
@@ -247,7 +247,7 @@ const AdminDashboard = () => {
                       activity.type === 'mentor' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
                       activity.type === 'report' ? 'bg-gradient-to-r from-red-500 to-orange-500' :
                       activity.type === 'user' ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                      'bg-gradient-to-r from-purple-500 to-purple-600'
+                      'bg-gradient-to-r from-blue-500 to-blue-600'
                     }`}>
                       {activity.type === 'mentor' ? <UserCheck size={16} /> :
                        activity.type === 'report' ? <Flag size={16} /> :

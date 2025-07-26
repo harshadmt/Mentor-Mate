@@ -16,6 +16,7 @@ import ChatWithStudent from './Components/Pages/mentor-section/chat';
 import NotificationsPage from './Components/Pages/mentor-section/Notification';
 import EditProfile from './Components/Pages/mentor-section/editprofile';
 import useUserStore from "../zustore/store"
+import NotFound from "./pageNotFound";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -30,6 +31,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element = {<NotFound/>}/>
 
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route path="/student/studentdashboard" element={<StudentDashboard />} />

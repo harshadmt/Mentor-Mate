@@ -124,7 +124,7 @@ const EditProfile = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-50 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white relative">
+          <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white relative">
             <button 
               onClick={() => navigate('/mentor/mentordashboard')}
               className="absolute left-6 top-6 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"

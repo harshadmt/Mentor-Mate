@@ -20,7 +20,7 @@ import {
 import useUserStore from "../../../../zustore/store";
 import axios from "axios";
 
-// 🟢 Toastify
+
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -31,7 +31,7 @@ const MentorDashboard = () => {
   const { user, logout } = useUserStore();
 
   const sidebarItems = [
-    { icon: <LayoutDashboard />, label: "Dashboard", to: "/mentor/dashboard", active: true },
+    { icon: <LayoutDashboard />, label: "Landing-page", to: "/", active: true },
     { icon: <BookPlus />, label: "Manage Roadmaps", to: "/mentor/roadmaps" },
     { icon: <Users />, label: "My Students", to: "/mentor/student" },
     { icon: <MessageCircle />, label: "Chat with Students", to: "/mentor/chat" },
@@ -46,7 +46,7 @@ const MentorDashboard = () => {
     { student: "Carol Davis", action: "Scheduled 1:1 session", time: "1 day ago" },
   ];
 
-  // ✅ Logout with toast message
+  
   const handleLogout = async () => {
     try {
       const res = await axios.post(
@@ -72,7 +72,7 @@ const MentorDashboard = () => {
     <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Mobile Header */}
       <div className="md:hidden flex justify-between items-center p-4 bg-white/80 backdrop-blur-md shadow-sm border-b">
-        <div className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="font-bold text-xl bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
           MentorMate
         </div>
         <button
@@ -90,10 +90,10 @@ const MentorDashboard = () => {
         } md:block`}
       >
         <div className="hidden md:block mb-8">
-          <h1 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
             MentorMate
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Mentor Dashboard</p>
+          <p className="text-sm text-gray-500 mt-1">⚡Mentor Dashboard</p>
         </div>
 
         <nav className="flex flex-col gap-2">
@@ -103,7 +103,7 @@ const MentorDashboard = () => {
               onClick={label === "Logout" ? handleLogout : () => navigate(to)}
               className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left w-full transition-all duration-200 ${
                 active
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-[1.02]"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-500 text-white shadow-lg transform scale-[1.02]"
                   : danger
                   ? "text-red-600 hover:bg-red-50 hover:shadow-md"
                   : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:shadow-md hover:transform hover:scale-[1.02]"
@@ -170,7 +170,7 @@ const MentorDashboard = () => {
               <div className="space-y-4">
                 {recentActivities.map((activity, index) => (
                   <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all duration-200">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-500 flex items-center justify-center text-white font-medium">
                       {activity.student.charAt(0)}
                     </div>
                     <div className="flex-1">

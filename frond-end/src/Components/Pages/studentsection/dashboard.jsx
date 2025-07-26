@@ -36,8 +36,8 @@ const StudentDashboard = () => {
           sidebarOpen ? "block" : "hidden"
         } md:block`}
       >
-        <div className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hidden md:block mb-8">
-          MentorMate
+        <div className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent hidden md:block mb-8">
+         ⚡ MentorMate
         </div>
         <nav className="flex flex-col gap-3 mt-4">
           <SidebarLink icon={<GraduationCap />} label="Dashboard" active />
@@ -217,7 +217,7 @@ const SidebarLink = ({ icon, label, danger, active, badge }) => (
     href="#"
     className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
       active
-        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
+        ? "bg-gradient-to-r from-blue-500 to-bule-500 text-white shadow-lg"
         : danger
         ? "text-red-600 hover:bg-red-50 hover:text-red-700"
         : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
