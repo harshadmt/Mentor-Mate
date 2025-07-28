@@ -8,6 +8,7 @@ const authRoutes = require('./router/authRoute');
 const protectedRoute = require('./router/protectRouter');
 const RoadmapRoutes = require('./router/roadMapRoute')
 const userRoute = require('./router/userRoute')
+const errorHandling = require('./middleware/errorMiddleWare')
 app.use(cors({
   origin: 'http://localhost:5173', 
   credentials: true,               
@@ -19,9 +20,9 @@ db();
 
 app.use('/api/auth', authRoutes);
 app.use('/api', protectedRoute);
-app.use('/api/roadmaps',RoadmapRoutes)
-app.use('/api/user',userRoute)
-
+app.use('/api/roadmaps',RoadmapRoutes);
+app.use('/api/user',userRoute);
+app.use(errorHandling);
 app.listen(process.env.PORT, () => {
   console.log('Server is Running');
 });

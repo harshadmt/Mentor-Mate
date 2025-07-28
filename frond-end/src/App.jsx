@@ -17,6 +17,8 @@ import NotificationsPage from './Components/Pages/mentor-section/Notification';
 import EditProfile from './Components/Pages/mentor-section/editprofile';
 import useUserStore from "../zustore/store"
 import NotFound from "./pageNotFound";
+import RoadmapSystem from "./Components/Pages/studentsection/getRoadmao/Roadmap";
+import EditstudentProfile from "./Components/Pages/studentsection/EditProfile/EditStudentProfile";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -35,6 +37,8 @@ function App() {
 
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route path="/student/studentdashboard" element={<StudentDashboard />} />
+          <Route path="/student/getroadmaps" element={<RoadmapSystem/>}/>
+          <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["mentor"]} />}>

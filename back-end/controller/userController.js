@@ -51,6 +51,35 @@ const getLoggedUser = async (req, res) => {
   }
 };
 
+const updateStudentProfile = async(req,res,next)=>{
+    try{
+      const userId = req.user.id;
+    const {fullName,bio,profilePicture}=req.body;
+
+    if(!fullName||!bio){
+      const error = new Error ("Full name and bio are required");
+      error.statusCode = 400;
+      throw error; 
+    }
+    const UpdatedStudent = await userService.updateStudentProfile(userId,{
+      fullName,
+      bio,
+      profilePicture
+    });
+    if(!UpdatedStudent){
+      const error = new Error("Student not found")
+      throw error
+    }
+    res.status(200).json({
+      success:true,
+      message:"student profile updated Successfully",
+      user:UpdatedStudent,
+    });
+    }catch(err){
+      next(err)
+    }
+}
 
 
-module.exports = { updateMentorprofile, getLoggedUser };
+
+module.exports = { updateMentorprofile, getLoggedUser,updateStudentProfile };
