@@ -15,14 +15,33 @@ const Signup = () => {
     confirmPassword: '',
     profilePicture: '',
     bio: '',
+    skills: [],
     agree: false,
   });
+  const [currentSkill, setCurrentSkill] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleAddSkill = () => {
+    if (currentSkill.trim() && !formData.skills.includes(currentSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, currentSkill.trim()]
+      }));
+      setCurrentSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
     }));
   };
 
@@ -87,6 +106,41 @@ const Signup = () => {
             <input type="password" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm" required />
             <input type="text" name="profilePicture" placeholder="Profile Picture URL" onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm" />
             <textarea name="bio" placeholder="Tell us about yourself" onChange={handleChange} className="w-full px-4 py-2 border rounded-md text-sm h-24" />
+
+            {role === 'mentor' && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentSkill}
+                    onChange={(e) => setCurrentSkill(e.target.value)}
+                    placeholder="Add your skills"
+                    className="flex-1 px-4 py-2 border rounded-md text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSkill}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-md text-sm"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.skills.map((skill, index) => (
+                    <div key={index} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSkill(skill)}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-start text-sm">
               <input type="checkbox" name="agree" onChange={handleChange} className="mr-2 mt-1" required />

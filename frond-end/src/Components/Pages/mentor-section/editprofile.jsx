@@ -14,7 +14,8 @@ const EditProfile = () => {
     password: "",
     role: "student",
     bio: "",
-    profilePicture: "", // Changed from null to empty string for URL
+    profilePicture: "",
+    skills: ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,17 +30,17 @@ const EditProfile = () => {
           withCredentials: true,
         });
 
-        const { fullName, email, role, bio, profilePicture } = res.data.user || {}; 
-       
+        const { fullName, email, role, bio, profilePicture, skills } = res.data.user || {};
+
         setFormData({
           fullName: fullName || "",
           email: email || "",
           password: "",
           role: role || "student",
           bio: bio || "",
-          profilePicture: profilePicture || ""
+          profilePicture: profilePicture || "",
+          skills: skills ? skills.join(", ") : "" // Convert array to comma-separated string
         });
-
       } catch (err) {
         setError("Failed to load profile.");
         console.error(err);
@@ -77,7 +78,6 @@ const EditProfile = () => {
     setIsSubmitting(true);
     setError("");
 
-    // Validate URL if provided
     if (formData.profilePicture && !validateUrl(formData.profilePicture)) {
       setError("Please enter a valid URL for profile picture");
       setIsSubmitting(false);
@@ -86,14 +86,17 @@ const EditProfile = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:5000/api/user/updateprofile", 
+        "http://localhost:5000/api/user/updateprofile",
         {
           fullName: formData.fullName,
           email: formData.email,
-          password: formData.password || undefined, // Only send if changed
+          password: formData.password || undefined,
           role: formData.role,
           bio: formData.bio,
-          profilePicture: formData.profilePicture || null
+          profilePicture: formData.profilePicture || null,
+          skills: formData.role === "mentor"
+            ? formData.skills.split(",").map(skill => skill.trim()).filter(Boolean)
+            : []
         },
         {
           headers: { "Content-Type": "application/json" },
@@ -125,7 +128,7 @@ const EditProfile = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white relative">
-            <button 
+            <button
               onClick={() => navigate('/mentor/mentordashboard')}
               className="absolute left-6 top-6 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
             >
@@ -142,13 +145,12 @@ const EditProfile = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
-            {/* Profile Picture URL */}
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg mb-4">
                 {formData.profilePicture ? (
-                  <img 
-                    src={formData.profilePicture} 
-                    alt="Profile" 
+                  <img
+                    src={formData.profilePicture}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -159,7 +161,7 @@ const EditProfile = () => {
                   <FiUser className="text-gray-400 text-5xl" />
                 )}
               </div>
-              
+
               <div className="w-full max-w-md">
                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                   <FiLink className="mr-2 text-indigo-600" /> Profile Picture URL
@@ -169,14 +171,13 @@ const EditProfile = () => {
                   name="profilePicture"
                   value={formData.profilePicture}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
                   placeholder="https://example.com/profile.jpg"
                 />
                 <p className="text-xs text-gray-500 mt-1">Enter a direct image URL</p>
               </div>
             </div>
 
-            {/* Rest of the form fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 flex items-center">
@@ -187,7 +188,7 @@ const EditProfile = () => {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
                   required
                 />
               </div>
@@ -201,7 +202,7 @@ const EditProfile = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
                   required
                 />
               </div>
@@ -215,7 +216,7 @@ const EditProfile = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
                   placeholder="Leave blank to keep current password"
                 />
               </div>
@@ -228,7 +229,7 @@ const EditProfile = () => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
                   required
                 >
                   <option value="student">Student</option>
@@ -238,6 +239,23 @@ const EditProfile = () => {
               </div>
             </div>
 
+            {/* Skills for mentors only */}
+            {formData.role === "mentor" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Skills (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                  placeholder="e.g., JavaScript, Node.js, React"
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700">About You</label>
               <textarea
@@ -245,7 +263,7 @@ const EditProfile = () => {
                 value={formData.bio}
                 onChange={handleBioChange}
                 rows="4"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3"
                 placeholder="Tell us about yourself..."
                 maxLength="200"
               />
@@ -269,7 +287,6 @@ const EditProfile = () => {
             <div className="pt-4">
               <button
                 type="submit"
-                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className={`w-full flex items-center justify-center py-3 px-6 rounded-xl font-medium text-white transition-all ${
                   isSubmitting

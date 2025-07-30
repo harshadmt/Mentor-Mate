@@ -1,4 +1,4 @@
-// /Services/UserServices/userService.js
+
 const User = require('../../models/usermodel');
 
 const updateMentorprofile = async (mentorId, updateData) => {
@@ -10,6 +10,7 @@ const updateMentorprofile = async (mentorId, updateData) => {
           fullName: updateData.fullName,
           bio: updateData.bio,
           profilePicture: updateData.profilePicture,
+          skills:updateData.skills,
         },
       },
       { new: true }
@@ -38,4 +39,13 @@ const  updateStudentProfile  = async(studentId,updateData)=>{
   ).select("-password");
   return UpdatedStudent
 }
-module.exports = { updateMentorprofile, getUserById,updateStudentProfile };
+const getAllMentorSkills = async()=>{
+  const mentors = await User.findOne({role:'mentor'}).select('fullName bio profilePicture skills')
+  return mentors
+}
+
+const getMentorById = async(mentorId)=>{
+  const mentor  = await User.findById({_id:mentorId,role:"mentor"}).select('fullName bio profilePicture skills');
+  return mentor
+}
+module.exports = { updateMentorprofile, getUserById,updateStudentProfile,getAllMentorSkills,getMentorById };

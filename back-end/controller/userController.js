@@ -9,7 +9,7 @@ const updateMentorprofile = async (req, res) => {
       return res.status(403).json({ message: 'Access denied: Not a mentor' });
     }
 
-    const { fullName, bio, profilePicture } = req.body;
+    const { fullName, bio, profilePicture,skills } = req.body;
 
     if (!fullName || !bio) {
       return res.status(400).json({ message: 'Full name and bio are required' });
@@ -19,6 +19,7 @@ const updateMentorprofile = async (req, res) => {
       fullName,
       bio,
       profilePicture,
+      skills
     });
 
     if (!updatedUser) {
@@ -80,6 +81,39 @@ const updateStudentProfile = async(req,res,next)=>{
     }
 }
 
+const getAllMentorWithSkill  = async(req,res,next)=>{
+  try{
+    const mentors = await userService.getAllMentorSkills();
+    res.status(200).json({
+      success:true,
+      message:'Mentor fetched successfully',
+      data:mentors
+    })
+  }catch(error){
+    next(error);
+  };
+}
 
+const getMentorDetailsById = async(req,res,next)=>{
+  try{
+    const mentorId  = req.params.id ; 
+    const mentor  = await userService.getMentorById(mentorId);
 
-module.exports = { updateMentorprofile, getLoggedUser,updateStudentProfile };
+     if(!mentor){
+      return res.status(404).json({
+        success:false,
+        message:'mentor not found'
+      });
+     }
+     res.status(200).json({
+      success:true,
+      message:"mentor fetched successfully",
+      data:mentor,
+     });
+
+  }catch(error){
+    next(error)
+  }
+} 
+
+module.exports = { updateMentorprofile, getLoggedUser,updateStudentProfile,getAllMentorWithSkill,getMentorDetailsById };
