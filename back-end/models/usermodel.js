@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["student", "mentor", "admin"], required: true },
   bio: { type: String },
   profilePicture: { type: String },
-  skills: { type: [String], default: [] }
+  skills: { type: [String], default: [] },
+  unlockedRoadmaps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Roadmap' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
