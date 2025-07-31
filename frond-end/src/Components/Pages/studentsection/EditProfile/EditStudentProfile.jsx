@@ -77,7 +77,7 @@ const EditstudentProfile = () => {
     setIsSubmitting(true);
     setError("");
 
-    // Validate URL if provided
+  
     if (formData.profilePicture && !validateUrl(formData.profilePicture)) {
       setError("Please enter a valid URL for profile picture");
       setIsSubmitting(false);
@@ -126,7 +126,7 @@ const EditstudentProfile = () => {
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white relative">
             <button 
-              onClick={() => navigate('/mentor/mentordashboard')}
+              onClick={() => navigate('/student/studentdashboard')}
               className="absolute left-6 top-6 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
             >
               <FiArrowLeft className="w-5 h-5" />

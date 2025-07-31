@@ -18,4 +18,11 @@ exports.deleteRoadmap = async (id)=>{
     return await Roadmap.findByIdAndDelete(id)
 }
 
+exports.getAllRoadmaps = async () => {
+  const roadmaps = await Roadmap.find()
+    .populate('createdBy', 'fullName profilePicture')
+    .select('title description price skills steps resources createdAt updatedAt');
+
+  return roadmaps;
+};
 

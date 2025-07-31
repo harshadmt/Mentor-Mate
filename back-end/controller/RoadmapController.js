@@ -55,3 +55,15 @@ exports.deleteRoadmap = async (req,res)=>{
    }
 }
 
+exports.getAllRoadmaps = async(req,res,next)=>{
+  try{
+    const roadmaps = await RoadmapService.getAllRoadmaps()
+    res.status(200).json({
+      success:true,
+      message:"Roadmaps fetched successfully",
+      data:roadmaps,
+    });
+  }catch(error){
+    next(error)
+  }
+}

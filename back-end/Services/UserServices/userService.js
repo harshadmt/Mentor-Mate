@@ -39,13 +39,14 @@ const  updateStudentProfile  = async(studentId,updateData)=>{
   ).select("-password");
   return UpdatedStudent
 }
-const getAllMentorSkills = async()=>{
-  const mentors = await User.findOne({role:'mentor'}).select('fullName bio profilePicture skills')
-  return mentors
-}
+const getAllMentorSkills = async () => {
+  const mentors = await User.find({ role: 'mentor' }).select('fullName bio profilePicture skills');
+  return mentors;
+};
+const getMentorById = async (mentorId) => {
+  const mentor = await User.findOne({ _id: mentorId, role: "mentor" })
+    .select('fullName bio profilePicture skills');
+  return mentor;
+};
 
-const getMentorById = async(mentorId)=>{
-  const mentor  = await User.findById({_id:mentorId,role:"mentor"}).select('fullName bio profilePicture skills');
-  return mentor
-}
 module.exports = { updateMentorprofile, getUserById,updateStudentProfile,getAllMentorSkills,getMentorById };
