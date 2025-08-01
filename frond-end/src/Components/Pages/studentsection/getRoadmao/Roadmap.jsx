@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FiBookOpen, FiBarChart2, FiAward, FiLock } from "react-icons/fi";
+import { FiBookOpen, FiLock } from "react-icons/fi";
+import useRoadmapStore from  '../../../../../zustore/Roadmapstore'
 
 const AllRoadmaps = () => {
   const navigate = useNavigate();
@@ -9,8 +10,8 @@ const AllRoadmaps = () => {
 
   const fetchRoadmaps = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/roadmaps/getall', {
-        withCredentials: true
+      const response = await axios.get('http://localhost:5000/api/student/getall', {
+        withCredentials: true,
       });
       setRoadmaps(response.data.data);
     } catch (error) {
@@ -22,19 +23,18 @@ const AllRoadmaps = () => {
     fetchRoadmaps();
   }, []);
 
-  const handleUnlockClick = (roadmap) => {
-    if (roadmap.isPurchased) {
-      navigate(`/roadmap/${roadmap._id}`);
-      return;
-    }
-    // Here you would implement your unlock logic
-    // For now, we'll just navigate to the roadmap
-    navigate(`/roadmap/${roadmap._id}`);
-  };
+const handleUnlockClick = (roadmap) => {
+  useRoadmapStore.getState().setRoadmapData({
+    roadmapId: roadmap._id,
+    roadmapTitle: roadmap.title,
+    amount: roadmap.price || 499,
+  });
+  navigate('/student/payment');
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-      {/* Back button */}
       <button 
         onClick={() => navigate('/student/studentdashboard')}
         className="mb-8 flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
@@ -45,7 +45,6 @@ const AllRoadmaps = () => {
         Back to Dashboard
       </button>
 
-      {/* Hero Section */}
       <div className="text-center mb-16">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-4">
           🚀 Learning Roadmaps
@@ -82,12 +81,9 @@ const AllRoadmaps = () => {
               key={roadmap._id}
               className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 transform hover:-translate-y-1"
             >
-              {/* Top gradient bar */}
               <div className={`h-2 ${roadmap.color || 'bg-gradient-to-r from-indigo-500 to-blue-500'}`}></div>
-              
-              {/* Content */}
+
               <div className="p-6">
-                {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
                     {roadmap.title}
@@ -103,7 +99,6 @@ const AllRoadmaps = () => {
                   {roadmap.description}
                 </p>
 
-                {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 text-center">
                     <div className="text-2xl font-bold text-indigo-600">{roadmap.steps?.length || 0}</div>
@@ -123,7 +118,6 @@ const AllRoadmaps = () => {
                   </div>
                 </div>
 
-                {/* Creator */}
                 {roadmap.createdBy && (
                   <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
                     <img
@@ -138,7 +132,6 @@ const AllRoadmaps = () => {
                   </div>
                 )}
 
-                {/* Action Button */}
                 <button
                   onClick={() => handleUnlockClick(roadmap)}
                   className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${

@@ -67,3 +67,19 @@ exports.getAllRoadmaps = async(req,res,next)=>{
     next(error)
   }
 }
+
+
+exports.getRoadmapById = async(req,res,next)=>{
+  const roadmapId  = req.params.id;
+  const roadmap = await RoadmapService.getRoadmapById(roadmapId);
+
+  if(!roadmap){
+    res.status(404);
+    throw new Error ("Roadmap not found")
+  }
+    res.status(200).json({
+      success:true,
+      message:"Roadmap fetched successfully",
+      data:roadmap
+    });
+};

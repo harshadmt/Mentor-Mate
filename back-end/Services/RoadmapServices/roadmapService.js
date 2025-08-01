@@ -26,3 +26,8 @@ exports.getAllRoadmaps = async () => {
   return roadmaps;
 };
 
+
+exports.findRoadmapById = async(roadmapId)=>{
+  const roadmap = await Roadmap.findById(roadmapId)
+  return roadmap
+}

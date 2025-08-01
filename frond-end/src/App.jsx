@@ -20,6 +20,8 @@ import NotFound from "./pageNotFound";
 import RoadmapSystem from "./Components/Pages/studentsection/getRoadmao/Roadmap";
 import EditstudentProfile from "./Components/Pages/studentsection/EditProfile/EditStudentProfile";
 import PurchasedRoadmap from "./Components/Pages/studentsection/UnlockedRoadMap/UnlockMap";
+import RazorpayPayment from "./Components/Pages/studentsection/UnlockedRoadMap/payment";
+import RazorpayPaymentWrapper from "./Components/Pages/studentsection/UnlockedRoadMap/paymentWrapper";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -40,6 +42,7 @@ function App() {
           <Route path="/student/studentdashboard" element={<StudentDashboard />} />
           <Route path="/student/getroadmaps" element={<RoadmapSystem/>}/>
           <Route path="/student/unlockedRoadmap" element={<PurchasedRoadmap/>}/>
+           <Route path="/student/payment" element={<RazorpayPaymentWrapper />} /> 
           <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
         </Route>
 
