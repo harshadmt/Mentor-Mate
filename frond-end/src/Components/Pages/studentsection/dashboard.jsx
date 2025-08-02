@@ -77,9 +77,9 @@ const StudentDashboard = () => {
           <nav className="flex flex-col gap-3 mt-4">
             <SidebarLink icon={<GraduationCap />} label="Dashboard" to="/student/dashboard" active />
             <SidebarLink icon={<BookOpen />} label="Roadmap" to="/student/getroadmaps" />
-            <SidebarLink icon={<BookOpen />} label="MyRoadmap" to="/student/unlockedRoadmap" />
+            <SidebarLink icon={<BookOpen />} label="MyRoadmap" to="/student/unlockedRoadmap/:id" />
             <SidebarLink icon={<MessageSquare />} label="Chat with Mentor" to="/student/chat" />
-            <SidebarLink icon={<CalendarDays />} label="Mentor" to="/student/mentors" />
+            <SidebarLink icon={<CalendarDays />} label="Mentor" to="/student/mentor" />
             <SidebarLink icon={<Bell />} label="Notifications" badge="3" to="/student/notifications" />
             <SidebarLink icon={<UserCog />} label="Edit Profile" to="/student/editprofile" />
             <div className="mt-8 pt-4 border-t border-gray-100">

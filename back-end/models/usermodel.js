@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
   bio: { type: String },
   profilePicture: { type: String },
   skills: { type: [String], default: [] },
-  unlockedRoadmaps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Roadmap' }]
+  unlockedRoadmaps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Roadmap' }],
+  createdRoadmaps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Roadmap' }],
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

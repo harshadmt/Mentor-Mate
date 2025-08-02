@@ -57,7 +57,6 @@ const MentorMate404 = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4 relative">
       
-      {/* Simple background accent */}
       <div className="absolute inset-0 opacity-20">
         <div 
           className="absolute inset-0"
@@ -68,7 +67,6 @@ const MentorMate404 = () => {
         />
       </div>
 
-      {/* Minimal floating icons */}
       <div className="absolute inset-0 pointer-events-none">
         {[
           { icon: '📚', left: 20, top: 30 },
@@ -91,12 +89,10 @@ const MentorMate404 = () => {
         ))}
       </div>
 
-      {/* Main content */}
       <div className={`text-center space-y-10 relative z-10 max-w-4xl mx-auto transform transition-all duration-1000 ${
         isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
       }`}>
         
-        {/* Simple logo/brand */}
         <div className={`transform transition-all duration-500 delay-200 ${
           isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
         }`}>
@@ -110,14 +106,12 @@ const MentorMate404 = () => {
           </div>
         </div>
 
-        {/* Clean 404 display */}
         <div className="relative">
           <h1 className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700 select-none">
             404
           </h1>
         </div>
 
-        {/* Simple messaging */}
         <div className={`space-y-4 transform transition-all duration-500 delay-400 ${
           isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
         }`}>
@@ -125,12 +119,11 @@ const MentorMate404 = () => {
             Oops! This Learning Path Doesn't Exist
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            It seems like you've wandered off the mentorship trail. Don't worry though - 
+            It seems like you've wandered off the mentorship trail. Don't worry though – 
             every great learner gets lost sometimes. Let's guide you back to your learning journey!
           </p>
         </div>
 
-        {/* Simple quote box */}
         <div className={`transform transition-all duration-500 delay-600 ${
           isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
         }`}>
@@ -147,7 +140,6 @@ const MentorMate404 = () => {
           </div>
         </div>
 
-        {/* Clean action buttons */}
         <div className={`flex flex-col sm:flex-row gap-4 justify-center items-center pt-6 transform transition-all duration-500 delay-800 ${
           isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
         }`}>
@@ -209,7 +201,6 @@ const MentorMate404 = () => {
           </button>
         </div>
 
-        {/* Simple progress indicator */}
         <div className={`flex justify-center pt-8 transform transition-all duration-500 delay-1000 ${
           isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
         }`}>
@@ -231,8 +222,7 @@ const MentorMate404 = () => {
         </div>
       </div>
 
-      {/* Simplified styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes gentleFloat {
           0%, 100% {
             transform: translateY(0px);
@@ -241,7 +231,7 @@ const MentorMate404 = () => {
             transform: translateY(-10px);
           }
         }
-        
+
         @keyframes simplePulse {
           0%, 80%, 100% {
             transform: scale(0.8);
@@ -259,7 +249,7 @@ const MentorMate404 = () => {
             opacity: 0;
           }
         }
-        
+
         .animate-ping {
           animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
         }

@@ -25,7 +25,7 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
   useEffect(() => {
     if (!roadmapId) {
       toast.error("No roadmap selected. Redirecting...");
-      setTimeout(() => navigate("/student/getroadmaps"), 2000);
+      setTimeout(() => navigate("/student/unlockedRoadmap/:id"), 2000);
     }
   }, [roadmapId, navigate]);
 
@@ -35,18 +35,17 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
     setIsLoading(true);
     
     try {
-      // 1. Load Razorpay SDK
+      
       const scriptLoaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
       if (!scriptLoaded) {
         throw new Error("Razorpay SDK failed to load");
       }
 
-      // 2. Create payment order
       const { data } = await axios.post(
         "http://localhost:5000/api/payment/create-order",
         { 
           roadmapId, 
-          amount: amount * 100 // Convert to paise
+          amount: amount * 100 
         },
         { 
           withCredentials: true,
@@ -62,18 +61,18 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
 
       const { order } = data;
 
-      // 3. Initialize Razorpay payment
+      
       const options = {
         key: order.key || process.env.REACT_APP_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency || "INR",
-        name: "SkillSync Pro",
+        name: "Mentor-Mate",
         description: `Purchase: ${roadmapTitle}`,
         image: "https://i.imgur.com/n5tjHFD.png",
         order_id: order.id,
         handler: async (response) => {
           try {
-            // 4. Verify payment
+           
             const verifyRes = await axios.post(
               "http://localhost:5000/api/payment/verify-payment",
               {
@@ -100,7 +99,7 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
                 { icon: "🎉", autoClose: 5000 }
               );
               
-              // Refresh user data
+              
               try {
                 await axios.get('http://localhost:5000/api/user/me', { 
                   withCredentials: true 
@@ -109,7 +108,7 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
                 console.error("User refresh error:", refreshError);
               }
               
-              navigate("/student/unlockedRoadmap");
+              navigate("/student/unlockedRoadmap/:id");
             } else {
               throw new Error(verifyRes.data?.message || "Payment verification failed");
             }
@@ -209,8 +208,8 @@ const RazorpayPayment = ({ roadmapId, amount = 499, roadmapTitle = "Premium Road
         disabled={isLoading}
         className={`w-full py-4 px-6 rounded-xl font-bold text-white shadow-lg transition-all duration-300 ${
           isLoading
-            ? "bg-purple-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-xl"
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-xl"
         }`}
         whileHover={!isLoading ? { scale: 1.02 } : {}}
         whileTap={!isLoading ? { scale: 0.98 } : {}}

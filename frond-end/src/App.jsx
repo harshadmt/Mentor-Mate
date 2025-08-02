@@ -22,6 +22,8 @@ import EditstudentProfile from "./Components/Pages/studentsection/EditProfile/Ed
 import PurchasedRoadmap from "./Components/Pages/studentsection/UnlockedRoadMap/UnlockMap";
 import RazorpayPayment from "./Components/Pages/studentsection/UnlockedRoadMap/payment";
 import RazorpayPaymentWrapper from "./Components/Pages/studentsection/UnlockedRoadMap/paymentWrapper";
+import Mentors from "./Components/Pages/studentsection/Mentors/mentor";
+import MentorProfile from "./Components/Pages/studentsection/ViewmentorProfile/Viewmwntor";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -41,7 +43,9 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route path="/student/studentdashboard" element={<StudentDashboard />} />
           <Route path="/student/getroadmaps" element={<RoadmapSystem/>}/>
-          <Route path="/student/unlockedRoadmap" element={<PurchasedRoadmap/>}/>
+        <Route path="/student/unlockedRoadmap/:id" element={<PurchasedRoadmap />} />
+         <Route path="/student/mentor" element={<Mentors/>}/>
+       <Route path="/student/mentorprofile/:id" element={<MentorProfile/>}/>
            <Route path="/student/payment" element={<RazorpayPaymentWrapper />} /> 
           <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
         </Route>

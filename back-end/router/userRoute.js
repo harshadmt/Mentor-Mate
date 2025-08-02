@@ -7,7 +7,7 @@ router.get('/profile', protect, getLoggedUser);
 router.put('/updateprofile', protect, updateMentorprofile);
 router.put('/studentprofile',protect,updateStudentProfile)
 router.get('/student/mentor', protect, getAllMentorWithSkill);
-router.get('/student/mentor/:id', protect, getMentorDetailsById);
+// router.get('/student/mentor/:id', protect, getMentorDetailsById);
 
 
 module.exports = router;

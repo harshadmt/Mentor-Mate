@@ -12,7 +12,7 @@ const razorpayInstance = new Razorpay({
 exports.createPaymentOrder = async (studentId, roadmapId, amount) => {
   try {
     const order = await razorpayInstance.orders.create({
-      amount: amount * 100, // Razorpay expects paisa
+      amount: amount * 100, 
       currency: "INR",
       receipt: `receipt_${Date.now()}`
     });
@@ -42,7 +42,7 @@ exports.verifypaymentAndUnlock = async (studentId, roadmapId, {
   razorpaySignature
 }) => {
   try {
-    // 1. Verify the payment signature
+   
     const body = razorpayOrderId + "|" + razorpayPaymentId;
     const expectedSignature = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body)
@@ -52,7 +52,7 @@ exports.verifypaymentAndUnlock = async (studentId, roadmapId, {
       throw new Error("Payment verification failed: Invalid signature");
     }
 
-    // 2. Update payment record
+    
     const payment = await Payment.findOneAndUpdate(
       { razorpayOrderId },
       {
@@ -67,11 +67,11 @@ exports.verifypaymentAndUnlock = async (studentId, roadmapId, {
       throw new Error("Payment record not found");
     }
 
-    // 3. Add roadmap to student's unlockedRoadmaps if not already present
+    
     const updatedStudent = await User.findByIdAndUpdate(
       studentId,
       { 
-        $addToSet: { unlockedRoadmaps: roadmapId } // $addToSet prevents duplicates
+        $addToSet: { unlockedRoadmaps: roadmapId } 
       },
       { new: true }
     ).populate('unlockedRoadmaps');
@@ -80,11 +80,10 @@ exports.verifypaymentAndUnlock = async (studentId, roadmapId, {
       throw new Error("Student not found");
     }
 
-    // 4. Return the updated unlockedRoadmaps
     return updatedStudent.unlockedRoadmaps;
 
   } catch (error) {
     console.error("🚨 Verification Error:", error);
-    throw error; // Re-throw for controller to handle
+    throw error; 
   }
 };
