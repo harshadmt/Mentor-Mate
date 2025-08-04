@@ -48,7 +48,7 @@ const LoginPage = () => {
       <div className="bg-white w-full max-w-5xl shadow-lg rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
         {/* Left Side Form */}
         <div className="p-8 sm:p-10 md:p-12">
-          <h1 className="text-3xl font-bold text-blue-600 mb-1">⚡ MentorMate</h1>
+          <button onClick={()=>navigate('/')}><h1 className="text-3xl font-bold text-blue-600 mb-1">⚡ MentorMate</h1></button>
           <p className="text-sm text-gray-500 mb-6">Sign in to continue your journey</p>
 
           {/* Role Selection */}

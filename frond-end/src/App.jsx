@@ -24,6 +24,7 @@ import RazorpayPayment from "./Components/Pages/studentsection/UnlockedRoadMap/p
 import RazorpayPaymentWrapper from "./Components/Pages/studentsection/UnlockedRoadMap/paymentWrapper";
 import Mentors from "./Components/Pages/studentsection/Mentors/mentor";
 import MentorProfile from "./Components/Pages/studentsection/ViewmentorProfile/Viewmwntor";
+import ChatApp from "./Components/Pages/studentsection/Chat/chat";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -47,9 +48,10 @@ function App() {
          <Route path="/student/mentor" element={<Mentors/>}/>
        <Route path="/student/mentorprofile/:id" element={<MentorProfile/>}/>
            <Route path="/student/payment" element={<RazorpayPaymentWrapper />} /> 
+           <Route path="/student/chat" element={<ChatApp/>}/>
           <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
         </Route>
-
+ 
         <Route element={<ProtectedRoute allowedRoles={["mentor"]} />}>
           <Route path="/mentor/mentordashboard" element={<MentorDashboard />} />
           <Route path='/mentor/roadmaps' element={<SeeRoadmaps />} />

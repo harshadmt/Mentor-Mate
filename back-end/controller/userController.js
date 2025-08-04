@@ -1,4 +1,4 @@
-// /controller/userController.js
+
 const userService = require('../Services/UserServices/userService');
 
 const updateMentorprofile = async (req, res) => {
@@ -93,36 +93,7 @@ const getAllMentorWithSkill = async (req, res, next) => {
   }
 };
 
-// mentorController.js
-// const getMentorDetailsById = async (req, res, next) => {
-//   try {
-//     const mentorId = req.params.id;
-    
-//     // Get mentor details with populated roadmaps
-//     const mentor = await User.findById(mentorId)
-//       .select('-password -__v')
-//       .populate({
-//         path: 'createdRoadmaps',
-//         select: 'title description tags updatedAt students',
-//         options: { sort: { createdAt: -1 } }
-//       });
 
-//     if (!mentor) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Mentor not found',
-//       });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       data: mentor,
-//     });
-
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 
 module.exports = { updateMentorprofile, getLoggedUser,updateStudentProfile,getAllMentorWithSkill};

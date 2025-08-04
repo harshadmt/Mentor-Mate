@@ -73,7 +73,7 @@ const Signup = () => {
         
         {/* Left Side with Gradient */}
         <div className="bg-gradient-to-r from-blue-100 to-blue-300 p-10 flex flex-col justify-center rounded-tl-2xl rounded-bl-2xl">
-          <div className="text-blue-600 font-bold text-3xl mb-2">⚡ Mentor Mate</div>
+          <button onClick={()=>navigate('/')}><div className="text-blue-600 font-bold text-3xl mb-2">⚡ Mentor Mate</div></button>
           <h1 className="text-3xl font-semibold text-gray-900 mb-2">Join MentorMate</h1>
           <p className="text-gray-700 mb-6">Your Gateway to Guided Learning</p>
           <img src={signupImage} alt="Signup" className="rounded-lg w-full h-auto mb-6" />
