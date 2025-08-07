@@ -12,7 +12,7 @@ import CreateRoadmap from './Components/Pages/mentor-section/Roadmap/createroadm
 import AdminDashboard from './Components/Pages/Admin-section/Admin-Dash/Admin-dash';
 import EditRoadmap from './Components/Pages/mentor-section/Roadmap/Roadmapedit';
 import MyStudents from './Components/Pages/mentor-section/myStudent';
-import ChatWithStudent from './Components/Pages/mentor-section/chat';
+import ChatWithStudent from './Components/Pages/mentor-section/Chatwithstudent';
 import NotificationsPage from './Components/Pages/mentor-section/Notification';
 import EditProfile from './Components/Pages/mentor-section/editprofile';
 import useUserStore from "../zustore/store"
@@ -20,11 +20,12 @@ import NotFound from "./pageNotFound";
 import RoadmapSystem from "./Components/Pages/studentsection/getRoadmao/Roadmap";
 import EditstudentProfile from "./Components/Pages/studentsection/EditProfile/EditStudentProfile";
 import PurchasedRoadmap from "./Components/Pages/studentsection/UnlockedRoadMap/UnlockMap";
-import RazorpayPayment from "./Components/Pages/studentsection/UnlockedRoadMap/payment";
 import RazorpayPaymentWrapper from "./Components/Pages/studentsection/UnlockedRoadMap/paymentWrapper";
 import Mentors from "./Components/Pages/studentsection/Mentors/mentor";
 import MentorProfile from "./Components/Pages/studentsection/ViewmentorProfile/Viewmwntor";
-import ChatApp from "./Components/Pages/studentsection/Chat/chat";
+
+import ViewStudentProfile from "./Components/Pages/mentor-section/Roadmap/viewStudent";
+import ChatWithMentor from "./Components/Pages/studentsection/Chat/Chat";
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -48,7 +49,7 @@ function App() {
          <Route path="/student/mentor" element={<Mentors/>}/>
        <Route path="/student/mentorprofile/:id" element={<MentorProfile/>}/>
            <Route path="/student/payment" element={<RazorpayPaymentWrapper />} /> 
-           <Route path="/student/chat" element={<ChatApp/>}/>
+           <Route path="/student/chat" element={<ChatWithMentor/>}/>
           <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
         </Route>
  
@@ -57,6 +58,7 @@ function App() {
           <Route path='/mentor/roadmaps' element={<SeeRoadmaps />} />
           <Route path="/mentor/edit/:id" element={<EditRoadmap />} />
           <Route path="/mentor/viewroad/:id" element={<ViewRoadmap />} />
+          <Route path="/mentor/students/:studentId" element={<ViewStudentProfile/>}/>
           <Route path='/mentor/createRoadmap' element={<CreateRoadmap />} />
           <Route path='/mentor/student' element={<MyStudents />} />
           <Route path='/mentor/chat' element={<ChatWithStudent />} />

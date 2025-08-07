@@ -10,7 +10,7 @@ const mentorService = {
           path: 'unlockedRoadmaps',
           populate: {
             path: 'createdBy',
-            select: 'fullName _id email profilePicture bio',
+            select: 'fullName email profilePicture bio',
             match: { role: 'mentor' },
           },
         });
@@ -49,25 +49,48 @@ const mentorService = {
 
   getStudentsWhoPurchasedMentorRoadmaps: async (mentorId) => {
     try {
-      const mentorRoadmaps = await Roadmap.find({ createdBy: mentorId }).select('_id');
-      const roadmapIds = mentorRoadmaps.map((roadmap) => roadmap._id);
+      // Get all roadmaps created by this mentor
+      const mentorRoadmaps = await Roadmap.find({ createdBy: mentorId }).select('_id title');
+      const roadmapIds = mentorRoadmaps.map(roadmap => roadmap._id);
 
       if (roadmapIds.length === 0) return [];
 
+      // Find all payments for these roadmaps
       const payments = await Payment.find({
         roadmapId: { $in: roadmapIds },
         status: 'paid',
-      }).populate('studentId');
+      }).populate({
+        path: 'studentId',
+        select: 'fullName email profilePicture'
+      }).populate({
+        path: 'roadmapId',
+        select: 'title'
+      });
 
       const studentMap = new Map();
 
       payments.forEach((payment) => {
         const student = payment.studentId;
+        const roadmap = payment.roadmapId;
+        
         if (!studentMap.has(student._id.toString())) {
+          // Create new student entry
           studentMap.set(student._id.toString(), {
             id: student._id,
             fullName: student.fullName,
             email: student.email,
+            profilePicture: student.profilePicture,
+            purchasedRoadmaps: [{
+              roadmapId: roadmap._id,
+              title: roadmap.title
+            }]
+          });
+        } else {
+          // Add roadmap to existing student's purchasedRoadmaps
+          const existingStudent = studentMap.get(student._id.toString());
+          existingStudent.purchasedRoadmaps.push({
+            roadmapId: roadmap._id,
+            title: roadmap.title
           });
         }
       });
@@ -77,38 +100,47 @@ const mentorService = {
       throw new Error(`Error fetching students: ${error.message}`);
     }
   },
-  getStudentPurchasedById : async(mentorId,studentId) =>{
-    try{
-      const mentorRoadmaps = await Roadmap.find({createdBy:mentorId}).select('_id title');
-      const roadmapIds = mentorRoadmaps.map(r=>r._id.toString());
 
-      if(roadmapIds.length===0) return null;
+  getStudentPurchasedById: async (mentorId, studentId) => {
+    try {
+      // Get all roadmaps created by this mentor
+      const mentorRoadmaps = await Roadmap.find({ createdBy: mentorId }).select('_id title');
+      const roadmapIds = mentorRoadmaps.map(r => r._id);
 
-      const paytments = await Payment.find({
-        roadmapId:{$in:roadmapIds},
+      if (roadmapIds.length === 0) return null;
+
+      // Find all payments for this student
+      const payments = await Payment.find({
+        roadmapId: { $in: roadmapIds },
         studentId,
-        status:'paid',
-      }).populate('roadId');
-      if(!paytments||paytments.length===0) return null;
+        status: 'paid',
+      }).populate('roadmapId', 'title');
 
-      const student = await User.findById(studentId).select('fullName email profilePicture bio');
-      if(!student) return null
+      if (!payments || payments.length === 0) return null;
 
-      const purchasedRoadmaps = paytments.map(payment=>({
-        roadmapId:payment.roadmapId._id,
-        title:payment.roadmapId.title
+      // Get student details
+      const student = await User.findById(studentId)
+        .select('fullName email profilePicture bio');
+      if (!student) return null;
+
+      // Format purchased roadmaps
+      const purchasedRoadmaps = payments.map(payment => ({
+        roadmapId: payment.roadmapId._id,
+        title: payment.roadmapId.title,
+        purchaseDate: payment.createdAt
       }));
-      
-      return{
-        _id:student._id,
-        fullName:student.fullName,
-        email:student.email,
-        profilePicture:student.profilePicture,
-        bio:student.bio||'Aspiring learner',
+
+      return {
+        _id: student._id,
+        fullName: student.fullName,
+        email: student.email,
+        profilePicture: student.profilePicture,
+        bio: student.bio || 'Aspiring learner',
         purchasedRoadmaps,
-      }
-    }catch(error){
-        throw new Error(`Error fetching student ${error.message} `)
+        totalPurchases: purchasedRoadmaps.length
+      };
+    } catch (error) {
+      throw new Error(`Error fetching student: ${error.message}`);
     }
   }
 };
