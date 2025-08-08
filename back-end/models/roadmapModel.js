@@ -20,7 +20,7 @@ const roadmapSchema = new mongoose.Schema({
     week: Number
   }
 ],
-  
+  isPublished: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 

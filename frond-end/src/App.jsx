@@ -31,6 +31,8 @@ import MySession from "./Components/Pages/studentsection/MySession/Mysession";
 import VideoCallPage from "./Components/Pages/mentor-section/VideoSession/videoPage";
 import StudentNotifications from "./Components/Pages/studentsection/Notifications/Notification";
 import MentorNotifications from "./Components/Pages/mentor-section/Notification";
+import AdminUsers from "./Components/Pages/Admin-section/getUser/ManageUser";
+import AdminRoadmaps from "./Components/Pages/Admin-section/getRoadmap/Roadmap";
 
 
 
@@ -81,7 +83,9 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin/admindashboard" element={<AdminDashboard />} />
+          <Route path="/admin/admindashboard" element={<AdminDashboard />}/>
+          <Route path="/admin/adminUser" element ={<AdminUsers/>}/>
+          <Route path="/admin/adminRoadmap" element={<AdminRoadmaps/>}/>
         </Route>
       </Routes>
     </Router>

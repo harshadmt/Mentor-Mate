@@ -1,6 +1,6 @@
 
 const RoadmapService = require('../Services/RoadmapServices/roadmapService')
-
+const Roadmap =require('../models/roadmapModel')
 exports.createRoad = async(req,res)=>{
    try {
     const { title, description, price, resources, steps } = req.body;
@@ -55,18 +55,27 @@ exports.deleteRoadmap = async (req,res)=>{
    }
 }
 
-exports.getAllRoadmaps = async(req,res,next)=>{
-  try{
-    const roadmaps = await RoadmapService.getAllRoadmaps()
+exports.getAllRoadmaps = async (req, res, next) => {
+  try {
+    const userRole = req.user?.role;
+
+    let roadmaps;
+
+    if (userRole === 'admin' || userRole === 'mentor') {
+      roadmaps = await RoadmapService.getAllRoadmaps(); // All roadmaps
+    } else {
+      roadmaps = await RoadmapService.getPublishedRoadmaps(); // Only published
+    }
+
     res.status(200).json({
-      success:true,
-      message:"Roadmaps fetched successfully",
-      data:roadmaps,
+      success: true,
+      message: "Roadmaps fetched successfully",
+      data: roadmaps,
     });
-  }catch(error){
-    next(error)
+  } catch (error) {
+    next(error);
   }
-}
+};
 
 
 

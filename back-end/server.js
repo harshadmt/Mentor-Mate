@@ -22,7 +22,7 @@ const messageRoutes = require('./router/messageRoute');
 const mentorRoutes = require('./router/mentorRoute');
 const VideoSessionRoutes = require('./router/videoSessionRoute');;
 const notificationRoutes = require('./router/notificationRouter')
-
+const adminRoutes = require('./router/AdminRoutes')
 const errorHandling = require('./middleware/errorMiddleWare');
 
 // Initialize app & server
@@ -147,7 +147,8 @@ app.use('/api/student', studentRouter);
 app.use('/api/message', messageRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/videosession', VideoSessionRoutes);
-app.use('/api/notifications',notificationRoutes)
+app.use('/api/notifications',notificationRoutes);
+app.use('/api/admin',adminRoutes)
 
 // Global error handler
 app.use(errorHandling);
