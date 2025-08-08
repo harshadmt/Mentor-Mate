@@ -2,20 +2,28 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FiBookOpen, FiLock } from "react-icons/fi";
-import useRoadmapStore from  '../../../../../zustore/Roadmapstore'
+import useRoadmapStore from '../../../../../zustore/Roadmapstore';
+import { motion } from "framer-motion";
 
 const AllRoadmaps = () => {
   const navigate = useNavigate();
   const [roadmaps, setRoadmaps] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchRoadmaps = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get('http://localhost:5000/api/student/getall', {
         withCredentials: true,
       });
       setRoadmaps(response.data.data);
+      setError(null);
     } catch (error) {
       console.error('Error fetching roadmaps:', error.message);
+      setError("Failed to load roadmaps. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -23,15 +31,14 @@ const AllRoadmaps = () => {
     fetchRoadmaps();
   }, []);
 
-const handleUnlockClick = (roadmap) => {
-  useRoadmapStore.getState().setRoadmapData({
-    roadmapId: roadmap._id,
-    roadmapTitle: roadmap.title,
-    amount: roadmap.price || 499,
-  });
-  navigate('/student/payment');
-};
-
+  const handleUnlockClick = (roadmap) => {
+    useRoadmapStore.getState().setRoadmapData({
+      roadmapId: roadmap._id,
+      roadmapTitle: roadmap.title,
+      amount: roadmap.price || 499,
+    });
+    navigate('/student/payment');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -68,18 +75,48 @@ const handleUnlockClick = (roadmap) => {
         </div>
       </div>
 
-      {roadmaps.length === 0 ? (
-        <div className="text-center py-16">
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : error ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16 bg-red-50 rounded-xl max-w-2xl mx-auto"
+        >
+          <div className="text-6xl mb-4">😕</div>
+          <p className="text-xl text-gray-700">{error}</p>
+          <button
+            onClick={fetchRoadmaps}
+            className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Retry
+          </button>
+        </motion.div>
+      ) : roadmaps.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-center py-16"
+        >
           <div className="text-6xl mb-4">📚</div>
           <p className="text-xl text-gray-500">No roadmaps available at the moment.</p>
           <p className="text-gray-400 mt-2">Check back soon for amazing learning content!</p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto"
+        >
           {roadmaps.map((roadmap) => (
-            <div
+            <motion.div
               key={roadmap._id}
-              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 transform hover:-translate-y-1"
+              whileHover={{ scale: 1.02 }}
+              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200"
             >
               <div className={`h-2 ${roadmap.color || 'bg-gradient-to-r from-indigo-500 to-blue-500'}`}></div>
 
@@ -153,9 +190,9 @@ const handleUnlockClick = (roadmap) => {
                   )}
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

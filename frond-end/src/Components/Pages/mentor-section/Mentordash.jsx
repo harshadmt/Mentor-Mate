@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -16,16 +16,19 @@ import {
   Star,
   Award,
   ChevronRight,
+  Video,
 } from "lucide-react";
 import useUserStore from "../../../../zustore/store";
 import axios from "axios";
-
-
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { motion } from "framer-motion";
 
 const MentorDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [recentActivities, setRecentActivities] = useState([]);
   const navigate = useNavigate();
 
   const { user, logout } = useUserStore();
@@ -34,19 +37,51 @@ const MentorDashboard = () => {
     { icon: <LayoutDashboard />, label: "Landing-page", to: "/", active: true },
     { icon: <BookPlus />, label: "Manage Roadmaps", to: "/mentor/roadmaps" },
     { icon: <Users />, label: "My Students", to: "/mentor/student" },
+    { icon: <CalendarCheck />, label: "Schedule Session", to: "/mentor/schedule-session" },
+    { icon: <Video />, label: "My Sessions", to: "/mentor/mysession" },
     { icon: <MessageCircle />, label: "Chat with Students", to: "/mentor/chat" },
     { icon: <Bell />, label: "Notifications", to: "/mentor/notification" },
     { icon: <UserCog />, label: "Edit Profile", to: "/mentor/editprofile" },
     { icon: <LogOut />, label: "Logout", to: "/logout", danger: true },
   ];
 
-  const recentActivities = [
-    { student: "Alice Johnson", action: "Completed React Fundamentals", time: "2 hours ago" },
-    { student: "Bob Smith", action: "Started Advanced JavaScript", time: "4 hours ago" },
-    { student: "Carol Davis", action: "Scheduled 1:1 session", time: "1 day ago" },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        // Simulate API calls
+        const [statsRes, activitiesRes] = await Promise.all([
+          // Replace with actual API calls
+          new Promise(resolve => setTimeout(() => resolve({
+            data: {
+              roadmaps: 4,
+              students: 12,
+              completionRate: "87%",
+              nextSession: "Tomorrow 5 PM"
+            }
+          }), 1000)),
+          new Promise(resolve => setTimeout(() => resolve({
+            data: [
+              { student: "Alice Johnson", action: "Completed React Fundamentals", time: "2 hours ago" },
+              { student: "Bob Smith", action: "Started Advanced JavaScript", time: "4 hours ago" },
+              { student: "Carol Davis", action: "Scheduled 1:1 session", time: "1 day ago" },
+            ]
+          }), 1200))
+        ]);
 
-  
+        setDashboardData(statsRes.data);
+        setRecentActivities(activitiesRes.data);
+      } catch (error) {
+        toast.error("Failed to load dashboard data. Please try again later.");
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   const handleLogout = async () => {
     try {
       const res = await axios.post(
@@ -56,21 +91,35 @@ const MentorDashboard = () => {
       );
 
       if (res.status === 200) {
-        toast.success("Logged out successfully!");
-        if (typeof logout === "function") logout();
-        navigate("/login");
+        toast.success("Logged out successfully! Redirecting to login page...");
+        setTimeout(() => {
+          if (typeof logout === "function") logout();
+          navigate("/login");
+        }, 2000);
       } else {
-        toast.error("Logout failed!");
+        toast.error("Logout failed. Please try again.");
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred during logout.");
+      toast.error("An error occurred during logout. Please check your connection.");
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Mobile Header */}
+      {/* Toast Container */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
       <div className="md:hidden flex justify-between items-center p-4 bg-white/80 backdrop-blur-md shadow-sm border-b">
         <div className="font-bold text-xl bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
           MentorMate
@@ -83,7 +132,6 @@ const MentorDashboard = () => {
         </button>
       </div>
 
-      {/* Sidebar */}
       <aside
         className={`bg-white/80 backdrop-blur-md shadow-xl w-full md:w-72 px-6 py-6 transition-all duration-300 z-10 border-r border-gray-200/50 ${
           sidebarOpen ? "block" : "hidden"
@@ -121,97 +169,137 @@ const MentorDashboard = () => {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
-        {/* Topbar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Welcome back, {user?.fullName || "guest"} 👋
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Ready to inspire and guide your students today?
-            </p>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[70vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  Welcome back, {user?.fullName || "guest"} 👋
+                </h1>
+                <p className="text-gray-600 mt-2 text-lg">
+                  Ready to inspire and guide your students today?
+                </p>
+              </div>
 
-          {/* Profile */}
-          <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
-            <div className="relative">
-              <img
-                src={user?.profilePicture}
-                alt="Profile"
-                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+              <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+                <div className="relative">
+                  <img
+                    src={user?.profilePicture}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+                  />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                </div>
+                <div className="text-right">
+                  <h2 className="font-semibold text-gray-800">{user?.fullName}</h2>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatCard 
+                title="Created Roadmaps" 
+                value={dashboardData?.roadmaps || "0"} 
+                icon={<BookPlus size={24} />} 
+                gradient="from-blue-500 to-blue-600" 
+                bgGradient="from-blue-50 to-blue-100" 
+                change="+2 this month" 
               />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+              <StatCard 
+                title="Active Students" 
+                value={dashboardData?.students || "0"} 
+                icon={<Users size={24} />} 
+                gradient="from-green-500 to-green-600" 
+                bgGradient="from-green-50 to-green-100" 
+                change="+3 this week" 
+              />
+              <StatCard 
+                title="Completion Rate" 
+                value={dashboardData?.completionRate || "0%"} 
+                icon={<TrendingUp size={24} />} 
+                gradient="from-purple-500 to-purple-600" 
+                bgGradient="from-purple-50 to-purple-100" 
+                change="+5% this month" 
+              />
+              <StatCard 
+                title="Next Session" 
+                value={dashboardData?.nextSession || "Not scheduled"} 
+                icon={<Clock size={24} />} 
+                gradient="from-orange-500 to-orange-600" 
+                bgGradient="from-orange-50 to-orange-100" 
+                change="Live Q&A" 
+              />
             </div>
-            <div className="text-right">
-              <h2 className="font-semibold text-gray-800">{user?.fullName}</h2>
-              <p className="text-sm text-gray-500">{user?.email}</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Created Roadmaps" value="4" icon={<BookPlus size={24} />} gradient="from-blue-500 to-blue-600" bgGradient="from-blue-50 to-blue-100" change="+2 this month" />
-          <StatCard title="Active Students" value="12" icon={<Users size={24} />} gradient="from-green-500 to-green-600" bgGradient="from-green-50 to-green-100" change="+3 this week" />
-          <StatCard title="Completion Rate" value="87%" icon={<TrendingUp size={24} />} gradient="from-purple-500 to-purple-600" bgGradient="from-purple-50 to-purple-100" change="+5% this month" />
-          <StatCard title="Next Session" value="Tomorrow 5 PM" icon={<Clock size={24} />} gradient="from-orange-500 to-orange-600" bgGradient="from-orange-50 to-orange-100" change="Live Q&A" />
-        </div>
-
-        {/* Dashboard Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-800">Recent Activity</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
-              </div>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all duration-200">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-500 flex items-center justify-center text-white font-medium">
-                      {activity.student.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">{activity.student}</p>
-                      <p className="text-sm text-gray-600">{activity.action}</p>
-                    </div>
-                    <div className="text-xs text-gray-400">{activity.time}</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800">Recent Activity</h3>
+                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
                   </div>
-                ))}
+                  {recentActivities.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center py-20"
+                    >
+                      <p className="text-gray-500">No recent activities found</p>
+                    </motion.div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentActivities.map((activity, index) => (
+                        <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all duration-200">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-500 flex items-center justify-center text-white font-medium">
+                            {activity.student.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-800">{activity.student}</p>
+                            <p className="text-sm text-gray-600">{activity.action}</p>
+                          </div>
+                          <div className="text-xs text-gray-400">{activity.time}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Quick Actions */}
-          <div className="space-y-6">
-            <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <div onClick={() => navigate("/mentor/createRoadmap")}>
-                  <QuickActionButton icon={<BookPlus size={20} />} label="Create New Roadmap" color="from-blue-500 to-blue-600" />
+              <div className="space-y-6">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                  <div className="space-y-3">
+                    <div onClick={() => navigate("/mentor/createRoadmap")}>
+                      <QuickActionButton icon={<BookPlus size={20} />} label="Create New Roadmap" color="from-blue-500 to-blue-600" />
+                    </div>
+                    <div onClick={() => navigate("/mentor/schedule-session") }>
+                      <QuickActionButton icon={<CalendarCheck size={20} />} label="Schedule Session" color="from-green-500 to-green-600" />
+                    </div>
+                    <div onClick={() => navigate("/mentor/chat") }>
+                      <QuickActionButton icon={<MessageCircle size={20} />} label="Message Students" color="from-purple-500 to-purple-600" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <QuickActionButton icon={<CalendarCheck size={20} />} label="Schedule Session" color="from-green-500 to-green-600" />
-                </div>
-                <div onClick={() => navigate("/mentor/chat")}>
-                  <QuickActionButton icon={<MessageCircle size={20} />} label="Message Students" color="from-purple-500 to-purple-600" />
-                </div>
-              </div>
-            </div>
 
-            {/* Achievement */}
-            <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl shadow-lg border border-yellow-200/50 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <Award className="text-yellow-600" size={24} />
-                <h3 className="text-lg font-semibold text-yellow-800">Achievement</h3>
+                <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl shadow-lg border border-yellow-200/50 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Award className="text-yellow-600" size={24} />
+                    <h3 className="text-lg font-semibold text-yellow-800">Achievement</h3>
+                  </div>
+                  <p className="text-yellow-700 mb-2">Congratulations! 🎉</p>
+                  <p className="text-sm text-yellow-600">You've helped 5 students complete their roadmaps this month!</p>
+                </div>
               </div>
-              <p className="text-yellow-700 mb-2">Congratulations! 🎉</p>
-              <p className="text-sm text-yellow-600">You've helped 5 students complete their roadmaps this month!</p>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </main>
     </div>
   );

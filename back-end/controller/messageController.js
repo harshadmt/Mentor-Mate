@@ -1,5 +1,6 @@
 const messageService = require('../services/MessageServices/messageServices');
 const mongoose = require('mongoose');
+const  NotificationService = require('../Services/NotifactionServices/notificationservice')
 
 const sendMessage = async (req, res, next) => {
   try {
@@ -7,16 +8,32 @@ const sendMessage = async (req, res, next) => {
     const { receiver, content } = req.body;
 
     if (!receiver || !content) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Receiver ID and content are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Receiver ID and content are required"
       });
     }
 
     const message = await messageService.sendMessage(sender, receiver, content);
-    return res.status(201).json({ 
-      success: true, 
-      data: message 
+
+   
+    const io = req.app.get('io');
+    const notification = await NotificationService.createNotification({
+      recipient: receiver,
+      sender,
+      type: 'message',
+      content: `New message: ${content.substring(0, 50)}`
+    });
+
+    io.to(receiver.toString()).emit('new-notification', {
+      type: 'message',
+      content: notification.content,
+      createdAt: notification.createdAt
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: message
     });
   } catch (error) {
     console.error("Send Message Error:", error);
@@ -48,7 +65,7 @@ const getMessages = async (req, res, next) => {
     
     const messages = await messageService.getMessages(userId, receiverId);
     
-    // console.log(`✅ Found ${messages.length} messages`);
+   
     
     return res.status(200).json({ 
       success: true, 

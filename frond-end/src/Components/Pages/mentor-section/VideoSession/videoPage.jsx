@@ -161,6 +161,7 @@ const VideoCallPage = () => {
     init();
 
     return () => {
+      // Only cleanup if component is unmounting (not during re-renders)
       cleanupPeerConnection();
       cleanupMedia();
     };
@@ -284,9 +285,9 @@ const VideoCallPage = () => {
 
   if (permissionError) {
     return (
-      <div className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-lg border border-blue-100">
-          <FaExclamationTriangle className="text-blue-500 text-4xl mx-auto mb-4" />
+      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full">
+          <FaExclamationTriangle className="text-yellow-500 text-4xl mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Permission Required</h2>
           <p className="mb-6">{permissionError}</p>
           
@@ -301,7 +302,7 @@ const VideoCallPage = () => {
             {mediaState.isVideoDenied && !mediaState.isAudioDenied && (
               <button
                 onClick={continueWithoutVideo}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition"
+                className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition"
               >
                 Continue Without Video
               </button>
@@ -309,13 +310,13 @@ const VideoCallPage = () => {
             
             <button
               onClick={() => navigate(-1)}
-              className="bg-white hover:bg-blue-50 text-blue-600 py-3 px-6 rounded-lg font-medium transition border border-blue-200"
+              className="bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-lg font-medium transition"
             >
               Go Back
             </button>
           </div>
 
-          <div className="mt-8 text-sm text-blue-600">
+          <div className="mt-8 text-sm text-gray-400">
             <p className="mb-2 font-medium">Troubleshooting:</p>
             <ul className="list-disc list-inside space-y-1 text-left mx-auto max-w-xs">
               <li>Check your browser's permission settings</li>
@@ -334,38 +335,38 @@ const VideoCallPage = () => {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-4 relative"
+      className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 relative"
     >
       {/* Call header */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-        <div className="bg-white rounded-full px-4 py-2 flex items-center shadow-sm border border-blue-100">
+        <div className="bg-black bg-opacity-50 rounded-full px-4 py-2 flex items-center">
           <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-2">
-            <FaUser size={12} className="text-white" />
+            <FaUser size={12} />
           </div>
           <span className="font-medium">{remoteUser}</span>
-          <span className="mx-2 text-blue-300">•</span>
+          <span className="mx-2">•</span>
           <span>{formatTime(callDuration)}</span>
         </div>
         <div className="flex gap-2">
           <button 
             onClick={toggleFullscreen}
-            className="p-2 rounded-full bg-white hover:bg-blue-50 transition shadow-sm border border-blue-100"
+            className="p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition"
             aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
-            {fullscreen ? <FaCompress size={16} className="text-blue-600" /> : <FaExpand size={16} className="text-blue-600" />}
+            {fullscreen ? <FaCompress size={16} /> : <FaExpand size={16} />}
           </button>
           <button 
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full bg-white hover:bg-blue-50 transition shadow-sm border border-blue-100"
+            className="p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition"
             aria-label="Settings"
           >
-            <BsThreeDotsVertical size={16} className="text-blue-600" />
+            <BsThreeDotsVertical size={16} />
           </button>
         </div>
       </div>
 
       {/* Video containers */}
-      <div className={`relative w-full max-w-6xl ${fullscreen ? 'h-screen' : 'h-[80vh]'} rounded-xl overflow-hidden bg-white shadow-lg border border-blue-100`}>
+      <div className={`relative w-full max-w-6xl ${fullscreen ? 'h-screen' : 'h-[80vh]'} rounded-xl overflow-hidden bg-gray-800`}>
         {/* Remote video (main) */}
         <div className={`absolute inset-0 ${connected ? '' : 'flex items-center justify-center'}`}>
           {connected ? (
@@ -377,18 +378,18 @@ const VideoCallPage = () => {
             />
           ) : (
             <div className="text-center p-6">
-              <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                <FaUser size={48} className="text-blue-400" />
+              <div className="w-32 h-32 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-4">
+                <FaUser size={48} className="text-gray-400" />
               </div>
               <h3 className="text-xl font-medium mb-2">Waiting for {remoteUser} to join...</h3>
-              <p className="text-blue-500">You can start your {mediaState.hasVideo ? 'video' : 'audio'} call as soon as they join</p>
+              <p className="text-gray-400">You can start your {mediaState.hasVideo ? 'video' : 'audio'} call as soon as they join</p>
             </div>
           )}
         </div>
 
         {/* Local video (pip) - only shown if video is available */}
         {mediaState.hasVideo && (
-          <div className="absolute bottom-4 right-4 w-48 h-36 rounded-lg overflow-hidden border-2 border-white shadow-lg bg-blue-50">
+          <div className="absolute bottom-4 right-4 w-48 h-36 rounded-lg overflow-hidden border-2 border-white shadow-lg bg-black">
             {cameraOn ? (
               <video
                 ref={localVideoRef}
@@ -398,8 +399,8 @@ const VideoCallPage = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                <FaVideoSlash size={32} className="text-blue-400" />
+              <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                <FaVideoSlash size={32} className="text-gray-500" />
               </div>
             )}
           </div>
@@ -408,13 +409,13 @@ const VideoCallPage = () => {
 
       {/* Controls */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <div className="flex gap-4 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
+        <div className="flex gap-4 bg-black bg-opacity-50 rounded-full px-6 py-3 backdrop-blur-sm">
           <button
             onClick={toggleMic}
             disabled={!mediaState.hasAudio}
             className={`p-3 rounded-full flex flex-col items-center ${
-              !mediaState.hasAudio ? 'bg-blue-100 text-blue-400 cursor-not-allowed' :
-              micOn ? 'bg-blue-100 text-blue-600' : 'bg-red-500 text-white'
+              !mediaState.hasAudio ? 'bg-gray-600 cursor-not-allowed' :
+              micOn ? 'bg-white text-gray-800' : 'bg-red-500 text-white'
             } hover:opacity-80 transition`}
             aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
           >
@@ -428,7 +429,7 @@ const VideoCallPage = () => {
             <button
               onClick={toggleCamera}
               className={`p-3 rounded-full flex flex-col items-center ${
-                cameraOn ? 'bg-blue-100 text-blue-600' : 'bg-red-500 text-white'
+                cameraOn ? 'bg-white text-gray-800' : 'bg-red-500 text-white'
               } hover:opacity-80 transition`}
               aria-label={cameraOn ? "Turn off camera" : "Turn on camera"}
             >
@@ -450,14 +451,14 @@ const VideoCallPage = () => {
 
       {/* Settings panel */}
       {showSettings && (
-        <div className="absolute right-4 bottom-20 bg-white rounded-lg p-4 shadow-xl w-64 z-20 border border-blue-100">
+        <div className="absolute right-4 bottom-20 bg-gray-800 rounded-lg p-4 shadow-xl w-64 z-20">
           <div className="flex justify-between items-center mb-3">
-            <h4 className="font-medium flex items-center text-blue-800">
-              <FaCog className="mr-2 text-blue-600" /> Settings
+            <h4 className="font-medium flex items-center">
+              <FaCog className="mr-2" /> Settings
             </h4>
             <button 
               onClick={() => setShowSettings(false)}
-              className="text-blue-400 hover:text-blue-600"
+              className="text-gray-400 hover:text-white"
               aria-label="Close settings"
             >
               &times;
@@ -465,28 +466,28 @@ const VideoCallPage = () => {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-blue-600 mb-1">Microphone</label>
+              <label className="block text-sm text-gray-300 mb-1">Microphone</label>
               <select 
-                className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100"
+                className="w-full bg-gray-700 rounded p-2 text-sm"
                 disabled={!mediaState.hasAudio}
               >
                 <option>Default Microphone</option>
               </select>
               {!mediaState.hasAudio && (
-                <p className="text-xs text-red-500 mt-1">Microphone access denied</p>
+                <p className="text-xs text-red-400 mt-1">Microphone access denied</p>
               )}
             </div>
             {mediaState.hasVideo && (
               <div>
-                <label className="block text-sm text-blue-600 mb-1">Camera</label>
-                <select className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100">
+                <label className="block text-sm text-gray-300 mb-1">Camera</label>
+                <select className="w-full bg-gray-700 rounded p-2 text-sm">
                   <option>Default Camera</option>
                 </select>
               </div>
             )}
             <div>
-              <label className="block text-sm text-blue-600 mb-1">Speaker</label>
-              <select className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100">
+              <label className="block text-sm text-gray-300 mb-1">Speaker</label>
+              <select className="w-full bg-gray-700 rounded p-2 text-sm">
                 <option>Default Speaker</option>
               </select>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
@@ -13,40 +13,68 @@ import {
   LogOut,
   Menu,
   X,
+  Clock,
 } from "lucide-react";
 import useUserStore from "../../../../zustore/store";
+import { motion } from "framer-motion";
 
 const StudentDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessions, setSessions] = useState([]);
+
+  useEffect(() => {
+    // Simulate loading sessions data
+    const fetchSessions = async () => {
+      try {
+        // Replace with actual API call
+        // const response = await axios.get('/api/sessions');
+        // setSessions(response.data);
+        
+        // Simulated loading delay
+        setTimeout(() => {
+          setSessions([
+            { id: 1, title: "React Advanced", date: "2023-06-15", time: "18:00", mentor: "Rahul" },
+            { id: 2, title: "JavaScript Fundamentals", date: "2023-06-17", time: "16:00", mentor: "Priya" }
+          ]);
+          setIsLoading(false);
+        }, 1500);
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, []);
 
   // ✅ Logout Function with toast
- const handleLogout = async () => {
-  try {
-    const res = await axios.post(
-      "http://localhost:5000/api/auth/logout",
-      {},
-      { withCredentials: true }
-    );
+  const handleLogout = async () => {
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/logout",
+        {},
+        { withCredentials: true }
+      );
 
-    if (res.status === 200) {
-      toast.success("Logged out successfully!");
-      if (typeof logout === "function") logout();
+      if (res.status === 200) {
+        toast.success("Logged out successfully!");
+        if (typeof logout === "function") logout();
 
-      // 💡 Delay navigation so toast can show
-      setTimeout(() => {
-        navigate("/login");
-      }, 800); // 0.8 second delay
-    } else {
-      toast.error("Logout failed!");
+        // 💡 Delay navigation so toast can show
+        setTimeout(() => {
+          navigate("/login");
+        }, 800); // 0.8 second delay
+      } else {
+        toast.error("Logout failed!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred during logout.");
     }
-  } catch (error) {
-    console.error(error);
-    toast.error("An error occurred during logout.");
-  }
-};
-
+  };
 
   return (
     <>
@@ -80,6 +108,7 @@ const StudentDashboard = () => {
             <SidebarLink icon={<BookOpen />} label="MyRoadmap" to="/student/unlockedRoadmap/:id" />
             <SidebarLink icon={<MessageSquare />} label="Chat with Mentor" to="/student/chat" />
             <SidebarLink icon={<CalendarDays />} label="Mentor" to="/student/mentor" />
+            <SidebarLink icon={<Clock />} label="My Sessions" to="/student/mySession" />
             <SidebarLink icon={<Bell />} label="Notifications" badge="3" to="/student/notifications" />
             <SidebarLink icon={<UserCog />} label="Edit Profile" to="/student/editprofile" />
             <div className="mt-8 pt-4 border-t border-gray-100">
@@ -135,38 +164,64 @@ const StudentDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <Card title="Next Session" subtitle="Don't miss your upcoming class" icon={<CalendarDays className="w-5 h-5" />}>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">React Advanced Concepts</h3>
-                    <p className="text-sm text-gray-600">Today at 6:00 PM</p>
-                    <p className="text-xs text-blue-600 mt-1">with Mentor Rahul</p>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">6:00</div>
-                    <div className="text-xs text-gray-500">PM</div>
+                ) : sessions.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-center py-20"
+                  >
+                    <p className="text-gray-500">No upcoming sessions scheduled</p>
+                  </motion.div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                    <div>
+                      <h3 className="font-semibold text-gray-800">React Advanced Concepts</h3>
+                      <p className="text-sm text-gray-600">Today at 6:00 PM</p>
+                      <p className="text-xs text-blue-600 mt-1">with Mentor Rahul</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600">6:00</div>
+                      <div className="text-xs text-gray-500">PM</div>
+                    </div>
                   </div>
-                </div>
+                )}
               </Card>
 
               <Card title="This Week's Schedule" subtitle="Your learning roadmap" icon={<CalendarDays className="w-5 h-5" />}>
-                <div className="space-y-3">
-                  {[
-                    { day: "Monday", topic: "HTML & CSS Fundamentals", time: "3:00 - 4:00 PM", color: "bg-red-100 text-red-700" },
-                    { day: "Wednesday", topic: "JavaScript Essentials", time: "4:00 - 5:00 PM", color: "bg-yellow-100 text-yellow-700" },
-                    { day: "Friday", topic: "React Basics", time: "6:00 - 7:00 PM", color: "bg-blue-100 text-blue-700" },
-                  ].map((session, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${session.color.split(" ")[0]}`}></div>
-                        <div>
-                          <p className="font-medium text-gray-800">{session.topic}</p>
-                          <p className="text-sm text-gray-500">{session.day}</p>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-center py-20"
+                  >
+                    <p className="text-gray-500">No sessions scheduled this week</p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    {sessions.map((session, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${idx % 3 === 0 ? 'bg-red-100' : idx % 3 === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}></div>
+                          <div>
+                            <p className="font-medium text-gray-800">{session.title}</p>
+                            <p className="text-sm text-gray-500">{session.date}</p>
+                          </div>
                         </div>
+                        <span className="text-sm font-medium text-gray-600">{session.time}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-600">{session.time}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </Card>
             </div>
 

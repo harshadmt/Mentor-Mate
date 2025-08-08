@@ -13,7 +13,6 @@ import AdminDashboard from './Components/Pages/Admin-section/Admin-Dash/Admin-da
 import EditRoadmap from './Components/Pages/mentor-section/Roadmap/Roadmapedit';
 import MyStudents from './Components/Pages/mentor-section/myStudent';
 import ChatWithStudent from './Components/Pages/mentor-section/Chatwithstudent';
-import NotificationsPage from './Components/Pages/mentor-section/Notification';
 import EditProfile from './Components/Pages/mentor-section/editprofile';
 import useUserStore from "../zustore/store"
 import NotFound from "./pageNotFound";
@@ -23,15 +22,23 @@ import PurchasedRoadmap from "./Components/Pages/studentsection/UnlockedRoadMap/
 import RazorpayPaymentWrapper from "./Components/Pages/studentsection/UnlockedRoadMap/paymentWrapper";
 import Mentors from "./Components/Pages/studentsection/Mentors/mentor";
 import MentorProfile from "./Components/Pages/studentsection/ViewmentorProfile/Viewmwntor";
-
 import ViewStudentProfile from "./Components/Pages/mentor-section/Roadmap/viewStudent";
 import ChatWithMentor from "./Components/Pages/studentsection/Chat/Chat";
+import ScheduleSession from "./Components/Pages/mentor-section/VideoSession/sessionSchedule";
+import MySessions from "./Components/Pages/mentor-section/VideoSession/mySession";
+import EditSessionPage from "./Components/Pages/mentor-section/VideoSession/EditSession";
+import MySession from "./Components/Pages/studentsection/MySession/Mysession";
+import VideoCallPage from "./Components/Pages/mentor-section/VideoSession/videoPage";
+import StudentNotifications from "./Components/Pages/studentsection/Notifications/Notification";
+import MentorNotifications from "./Components/Pages/mentor-section/Notification";
+
+
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
 
   useEffect(() => {
-    fetchUser(); // call once on app load
+    fetchUser(); 
   }, []);
 
   return (
@@ -51,6 +58,9 @@ function App() {
            <Route path="/student/payment" element={<RazorpayPaymentWrapper />} /> 
            <Route path="/student/chat" element={<ChatWithMentor/>}/>
           <Route path="/student/editprofile" element={<EditstudentProfile/>}/>
+          <Route path="/student/videopage/:id" element={<VideoCallPage/>}/>
+          <Route path="/student/mySession" element={<MySession/>}/>
+          <Route path="/student/notifications" element ={<StudentNotifications/>}/>
         </Route>
  
         <Route element={<ProtectedRoute allowedRoles={["mentor"]} />}>
@@ -62,7 +72,11 @@ function App() {
           <Route path='/mentor/createRoadmap' element={<CreateRoadmap />} />
           <Route path='/mentor/student' element={<MyStudents />} />
           <Route path='/mentor/chat' element={<ChatWithStudent />} />
-          <Route path='/mentor/notification' element={<NotificationsPage />} />
+          <Route path="/mentor/schedule-session" element={<ScheduleSession/>}/>
+          <Route path="/mentor/mysession" element={<MySessions/>}/>
+          <Route path="/mentor/editsession/:id" element={<EditSessionPage/>}/>
+         <Route path="/mentor/videopage/:id" element={<VideoCallPage />} />
+          <Route path='/mentor/notification' element={<MentorNotifications />} />
           <Route path='/mentor/editprofile' element={<EditProfile />} />
         </Route>
 
