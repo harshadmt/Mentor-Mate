@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { 
@@ -35,6 +35,7 @@ const VideoCallPage = () => {
   const localStreamRef = useRef(null);
   const containerRef = useRef(null);
   const socketRef = useRef(socket);
+  const joinedRef = useRef(false);
 
   const [connected, setConnected] = useState(false);
   const [micOn, setMicOn] = useState(true);
@@ -45,6 +46,7 @@ const VideoCallPage = () => {
   const [remoteUser, setRemoteUser] = useState("Participant");
   const [permissionError, setPermissionError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [mediaState, setMediaState] = useState({
     hasAudio: false,
     hasVideo: false,
@@ -66,25 +68,16 @@ const VideoCallPage = () => {
     }
   };
 
-  const cleanupSocketListeners = () => {
-    const socket = socketRef.current;
-    socket.off("user-joined");
-    socket.off("offer");
-    socket.off("answer");
-    socket.off("ice-candidate");
-    socket.off("user-info");
-    socket.emit("leave-room", id);
-  };
-
   const endCall = () => {
     cleanupPeerConnection();
     cleanupMedia();
-    cleanupSocketListeners();
     navigate(-1);
   };
 
   const initMediaStream = async () => {
     try {
+      setIsLoading(true);
+      
       const constraints = {
         audio: !mediaState.isAudioDenied,
         video: !mediaState.isVideoDenied && {
@@ -93,92 +86,134 @@ const VideoCallPage = () => {
         }
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
-        .catch(err => {
-          if (err.name === 'NotAllowedError') {
-            const isAudioDenied = err.message.includes('audio');
-            const isVideoDenied = err.message.includes('video');
-            
-            setPermissionError(
-              `Please allow ${isAudioDenied && isVideoDenied ? 'microphone and camera' : 
-              isAudioDenied ? 'microphone' : 'camera'} access`
-            );
-            
-            setMediaState(prev => ({
-              ...prev,
-              isAudioDenied: isAudioDenied || prev.isAudioDenied,
-              isVideoDenied: isVideoDenied || prev.isVideoDenied
-            }));
-            
-            throw err;
-          }
-          throw err;
-        });
+      if (!constraints.audio && !constraints.video) {
+        setPermissionError('Camera and microphone access are required');
+        setIsLoading(false);
+        return false;
+      }
 
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       const hasAudio = stream.getAudioTracks().length > 0;
       const hasVideo = stream.getVideoTracks().length > 0;
       
       setMediaState({
         hasAudio,
         hasVideo,
-        isAudioDenied: !hasAudio && mediaState.isAudioDenied,
-        isVideoDenied: !hasVideo && mediaState.isVideoDenied
+        isAudioDenied: !hasAudio,
+        isVideoDenied: !hasVideo
       });
 
       if (hasAudio || hasVideo) {
-        localVideoRef.current.srcObject = stream;
+        if (localVideoRef.current && hasVideo) {
+          localVideoRef.current.srcObject = stream;
+        }
         localStreamRef.current = stream;
         setPermissionError(null);
+        setIsLoading(false);
         return true;
       } else {
         setPermissionError('Camera and microphone access are required');
+        setIsLoading(false);
         return false;
       }
     } catch (err) {
       console.error("Error initializing media:", err);
+      setIsLoading(false);
+      
+      if (err.name === 'NotAllowedError') {
+        let deniedServices = [];
+        if (constraints.audio && constraints.video) {
+          deniedServices = ['microphone', 'camera'];
+        } else if (constraints.audio) {
+          deniedServices = ['microphone'];
+        } else if (constraints.video) {
+          deniedServices = ['camera'];
+        }
+        setPermissionError(`Please allow ${deniedServices.join(' and ')} access to continue`);
+        setMediaState(prev => ({
+          ...prev,
+          isAudioDenied: constraints.audio ? true : prev.isAudioDenied,
+          isVideoDenied: constraints.video ? true : prev.isVideoDenied
+        }));
+      } else if (err.name === 'NotFoundError') {
+        setPermissionError('No camera or microphone found. Please check your devices.');
+      } else {
+        setPermissionError('Failed to access camera or microphone. Please try again.');
       }
+      
+      return false;
+    }
   };
 
-  const initSocketConnection = () => {
-    const socket = socketRef.current;
-    socket.emit("join-room", id);
-
-    socket.on("user-joined", handleUserJoined);
-    socket.on("offer", handleReceiveOffer);
-    socket.on("answer", handleReceiveAnswer);
-    socket.on("ice-candidate", handleNewICECandidate);
-    socket.on("user-info", (info) => setRemoteUser(info.name || "Participant"));
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      const mediaSuccess = await initMediaStream();
-      if (mediaSuccess) {
-        initSocketConnection();
-      }
-    };
-
-    init();
-
-    return () => {
-      cleanupPeerConnection();
-      cleanupMedia();
-    };
-  }, [retryCount, id]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCallDuration(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
+  const handleUserJoined = useCallback((data) => {
+    console.log("User joined:", data);
+    setConnected(true);
+    if (peerRef.current) return; // Prevent duplicate peer creation
+    const peer = createPeer(data.userId);
+    peerRef.current = peer;
+    
+    peer.createOffer()
+      .then(offer => {
+        peer.setLocalDescription(offer);
+        socketRef.current.emit("offer", {
+          target: data.socketId,
+          offer
+        });
+      })
+      .catch(err => console.error("Error creating offer:", err));
   }, []);
 
-  const handleUserJoined = (userId) => {
+  const handleReceiveOffer = useCallback(async (data) => {
+    console.log("Received offer:", data);
     setConnected(true);
-    const peer = createPeer(userId);
+    if (peerRef.current) return; // Prevent duplicate peer creation
+    const peer = createPeer(data.sender);
     peerRef.current = peer;
-  };
+
+    try {
+      await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+
+      socketRef.current.emit("answer", {
+        target: data.sender,
+        answer
+      });
+    } catch (err) {
+      console.error("Error handling offer:", err);
+    }
+  }, []);
+
+  const handleReceiveAnswer = useCallback(async (data) => {
+    console.log("Received answer:", data);
+    if (peerRef.current) {
+      try {
+        await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+      } catch (err) {
+        console.error("Error handling answer:", err);
+      }
+    }
+  }, []);
+
+  const handleNewICECandidate = useCallback(async (data) => {
+    console.log("Received ICE candidate:", data);
+    if (data.candidate && peerRef.current) {
+      try {
+        await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+      } catch (err) {
+        console.error("Error adding ICE candidate:", err);
+      }
+    }
+  }, []);
+
+  const handleUserDisconnected = useCallback((data) => {
+    console.log("User disconnected:", data);
+    setConnected(false);
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+  }, []);
 
   const createPeer = (userId) => {
     const peer = new RTCPeerConnection({
@@ -192,53 +227,81 @@ const VideoCallPage = () => {
     peer.onicecandidate = (event) => {
       if (event.candidate) {
         socketRef.current.emit("ice-candidate", {
-          candidate: event.candidate,
-          to: userId
+          target: userId,
+          candidate: event.candidate
         });
       }
     };
 
     peer.ontrack = (event) => {
-      remoteVideoRef.current.srcObject = event.streams[0];
-    };
-
-    peer.onconnectionstatechange = () => {
-      if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
-        endCall();
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
       }
     };
 
-    localStreamRef.current.getTracks().forEach(track => {
-      peer.addTrack(track, localStreamRef.current);
-    });
+    peer.onconnectionstatechange = () => {
+      console.log("Connection state:", peer.connectionState);
+      if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
+        setConnected(false);
+      }
+    };
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        peer.addTrack(track, localStreamRef.current);
+      });
+    }
 
     return peer;
   };
 
-  const handleReceiveOffer = async ({ offer, from }) => {
-    setConnected(true);
-    const peer = createPeer(from);
-    peerRef.current = peer;
+  useEffect(() => {
+    const init = async () => {
+      const mediaSuccess = await initMediaStream();
+      if (mediaSuccess && !joinedRef.current) {
+        joinedRef.current = true;
+        const socket = socketRef.current;
+        socket.emit("join-room", { roomId: id, userId: socket.id });
+        socket.on("user-joined", handleUserJoined);
+        socket.on("receive-offer", handleReceiveOffer);
+        socket.on("receive-answer", handleReceiveAnswer);
+        socket.on("receive-ice-candidate", handleNewICECandidate);
+        socket.on("user-disconnected", handleUserDisconnected);
+        socket.on("user-info", (info) => setRemoteUser(info.name || "Participant"));
+      }
+    };
 
-    await peer.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
+    init();
 
-    socketRef.current.emit("answer", {
-      answer,
-      to: from
-    });
-  };
+    return () => {
+      cleanupPeerConnection();
+      cleanupMedia();
+      if (joinedRef.current) {
+        const socket = socketRef.current;
+        socket.off("user-joined", handleUserJoined);
+        socket.off("receive-offer", handleReceiveOffer);
+        socket.off("receive-answer", handleReceiveAnswer);
+        socket.off("receive-ice-candidate", handleNewICECandidate);
+        socket.off("user-disconnected", handleUserDisconnected);
+        socket.off("user-info");
+        socket.emit("leave-room", id);
+        joinedRef.current = false;
+      }
+    };
+  }, [id, retryCount, handleUserJoined, handleReceiveOffer, handleReceiveAnswer, handleNewICECandidate, handleUserDisconnected]);
 
-  const handleReceiveAnswer = ({ answer }) => {
-    peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-  };
-
-  const handleNewICECandidate = ({ candidate }) => {
-    if (candidate && peerRef.current) {
-      peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+  useEffect(() => {
+    let timer;
+    if (!permissionError && !isLoading) {
+      timer = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
     }
-  };
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [permissionError, isLoading]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -259,6 +322,7 @@ const VideoCallPage = () => {
 
   const continueWithoutVideo = () => {
     setMediaState(prev => ({ ...prev, isVideoDenied: true }));
+    setPermissionError(null);
     setRetryCount(prev => prev + 1);
   };
 
@@ -282,6 +346,18 @@ const VideoCallPage = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-6">
+        <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-lg border border-blue-100 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold mb-2">Setting up your call...</h2>
+          <p className="text-blue-600">Please wait while we access your camera and microphone</p>
+        </div>
+      </div>
+    );
+  }
+
   if (permissionError) {
     return (
       <div className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-6 text-center">
@@ -298,12 +374,12 @@ const VideoCallPage = () => {
               Try Again
             </button>
             
-            {mediaState.isVideoDenied && !mediaState.isAudioDenied && (
+            {!mediaState.isAudioDenied && mediaState.isVideoDenied && (
               <button
                 onClick={continueWithoutVideo}
                 className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition"
               >
-                Continue Without Video
+                Continue Audio Only
               </button>
             )}
             
@@ -322,7 +398,7 @@ const VideoCallPage = () => {
               <li>Make sure no other app is using your camera/mic</li>
               <li>Refresh the page and try again</li>
               {mediaState.isVideoDenied && (
-                <li>Click "Continue Without Video" for audio-only</li>
+                <li>Click "Continue Audio Only" for voice calls</li>
               )}
             </ul>
           </div>
@@ -336,7 +412,6 @@ const VideoCallPage = () => {
       ref={containerRef}
       className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-4 relative"
     >
-      {/* Call header */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
         <div className="bg-white rounded-full px-4 py-2 flex items-center shadow-sm border border-blue-100">
           <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-2">
@@ -364,9 +439,7 @@ const VideoCallPage = () => {
         </div>
       </div>
 
-      {/* Video containers */}
       <div className={`relative w-full max-w-6xl ${fullscreen ? 'h-screen' : 'h-[80vh]'} rounded-xl overflow-hidden bg-white shadow-lg border border-blue-100`}>
-        {/* Remote video (main) */}
         <div className={`absolute inset-0 ${connected ? '' : 'flex items-center justify-center'}`}>
           {connected ? (
             <video
@@ -381,12 +454,13 @@ const VideoCallPage = () => {
                 <FaUser size={48} className="text-blue-400" />
               </div>
               <h3 className="text-xl font-medium mb-2">Waiting for {remoteUser} to join...</h3>
-              <p className="text-blue-500">You can start your {mediaState.hasVideo ? 'video' : 'audio'} call as soon as they join</p>
+              <p className="text-blue-500">
+                You can start your {mediaState.hasVideo ? 'video' : 'audio'} call as soon as they join
+              </p>
             </div>
           )}
         </div>
 
-        {/* Local video (pip) - only shown if video is available */}
         {mediaState.hasVideo && (
           <div className="absolute bottom-4 right-4 w-48 h-36 rounded-lg overflow-hidden border-2 border-white shadow-lg bg-blue-50">
             {cameraOn ? (
@@ -406,7 +480,6 @@ const VideoCallPage = () => {
         )}
       </div>
 
-      {/* Controls */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
         <div className="flex gap-4 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
           <button
@@ -448,7 +521,6 @@ const VideoCallPage = () => {
         </div>
       </div>
 
-      {/* Settings panel */}
       {showSettings && (
         <div className="absolute right-4 bottom-20 bg-white rounded-lg p-4 shadow-xl w-64 z-20 border border-blue-100">
           <div className="flex justify-between items-center mb-3">

@@ -21,36 +21,64 @@ import { motion } from "framer-motion";
 const StudentDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useUserStore();
-  const navigate = useNavigate();
+  const [schedule, setSchedule] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [latestMessage, setLatestMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [sessions, setSessions] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading sessions data
-    const fetchSessions = async () => {
+    const fetchDashboardData = async () => {
       try {
-        // Replace with actual API call
-        // const response = await axios.get('/api/sessions');
-        // setSessions(response.data);
+        setIsLoading(true);
         
-        // Simulated loading delay
-        setTimeout(() => {
-          setSessions([
-            { id: 1, title: "React Advanced", date: "2023-06-15", time: "18:00", mentor: "Rahul" },
-            { id: 2, title: "JavaScript Fundamentals", date: "2023-06-17", time: "16:00", mentor: "Priya" }
-          ]);
-          setIsLoading(false);
-        }, 1500);
-      } catch (error) {
-        console.error("Error fetching sessions:", error);
+        // Fetch all data in parallel with error handling for each request
+        const results = await Promise.allSettled([
+          axios.get('http://localhost:5000/api/videosession', { withCredentials: true }),
+          axios.get('http://localhost:5000/api/message/student/latest-message', { withCredentials: true }),
+          axios.get('http://localhost:5000/api/notifications', { withCredentials: true })
+        ]);
+
+        // Handle schedule response
+        if (results[0].status === 'fulfilled') {
+          const scheduleData = results[0].value.data;
+          setSchedule(Array.isArray(scheduleData) ? scheduleData : []);
+        } else {
+          console.error('Error fetching schedule:', results[0].reason);
+          toast.error('Failed to load schedule');
+        }
+
+        // Handle latest message response
+        if (results[1].status === 'fulfilled') {
+          // Check if data exists and has latestMessage property
+          const messageData = results[1].value.data;
+          setLatestMessage(messageData?.latestMessage || null);
+        } else {
+          console.error('Error fetching latest message:', results[1].reason);
+          toast.error('Failed to load messages');
+        }
+
+        // Handle notifications response
+        if (results[2].status === 'fulfilled') {
+          // Check if data exists and has notifications property
+          const notificationsData = results[2].value.data;
+          setNotifications(Array.isArray(notificationsData?.notifications) ? notificationsData?.notifications : []);
+        } else {
+          console.error('Error fetching notifications:', results[2].reason);
+          toast.error('Failed to load notifications');
+        }
+
+      } catch (err) {
+        console.error('Error in fetchDashboardData:', err);
+        toast.error('Failed to load dashboard data');
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSessions();
+    fetchDashboardData();
   }, []);
 
-  // ✅ Logout Function with toast
   const handleLogout = async () => {
     try {
       const res = await axios.post(
@@ -58,15 +86,11 @@ const StudentDashboard = () => {
         {},
         { withCredentials: true }
       );
-
+    
       if (res.status === 200) {
         toast.success("Logged out successfully!");
         if (typeof logout === "function") logout();
-
-        // 💡 Delay navigation so toast can show
-        setTimeout(() => {
-          navigate("/login");
-        }, 800); // 0.8 second delay
+        setTimeout(() => navigate("/login"), 800);
       } else {
         toast.error("Logout failed!");
       }
@@ -75,6 +99,9 @@ const StudentDashboard = () => {
       toast.error("An error occurred during logout.");
     }
   };
+
+  // Safe access to schedule data
+  const nextSession = schedule.length > 0 ? schedule[0] : null;
 
   return (
     <>
@@ -109,7 +136,12 @@ const StudentDashboard = () => {
             <SidebarLink icon={<MessageSquare />} label="Chat with Mentor" to="/student/chat" />
             <SidebarLink icon={<CalendarDays />} label="Mentor" to="/student/mentor" />
             <SidebarLink icon={<Clock />} label="My Sessions" to="/student/mySession" />
-            <SidebarLink icon={<Bell />} label="Notifications" badge="3" to="/student/notifications" />
+            <SidebarLink 
+              icon={<Bell />} 
+              label="Notifications" 
+              badge={notifications.filter(n => !n.read).length || null} 
+              to="/student/notifications" 
+            />
             <SidebarLink icon={<UserCog />} label="Edit Profile" to="/student/editprofile" />
             <div className="mt-8 pt-4 border-t border-gray-100">
               <button
@@ -168,7 +200,7 @@ const StudentDashboard = () => {
                   <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : sessions.length === 0 ? (
+                ) : !nextSession ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -180,14 +212,25 @@ const StudentDashboard = () => {
                 ) : (
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                     <div>
-                      <h3 className="font-semibold text-gray-800">React Advanced Concepts</h3>
-                      <p className="text-sm text-gray-600">Today at 6:00 PM</p>
-                      <p className="text-xs text-blue-600 mt-1">with Mentor Rahul</p>
+                      <h3 className="font-semibold text-gray-800">{nextSession.title || 'Untitled Session'}</h3>
+                      <p className="text-sm text-gray-600">
+                        {nextSession.date ? new Date(nextSession.date).toLocaleDateString() : 'No date set'} 
+                        {nextSession.time ? ` at ${nextSession.time}` : ''}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {nextSession.mentorName ? `with Mentor ${nextSession.mentorName}` : 'No mentor assigned'}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600">6:00</div>
-                      <div className="text-xs text-gray-500">PM</div>
-                    </div>
+                    {nextSession.time && (
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {nextSession.time.split(':')[0]}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {parseInt(nextSession.time.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -197,7 +240,7 @@ const StudentDashboard = () => {
                   <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : sessions.length === 0 ? (
+                ) : schedule.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -208,16 +251,21 @@ const StudentDashboard = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-3">
-                    {sessions.map((session, idx) => (
+                    {schedule.map((session, idx) => (
                       <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${idx % 3 === 0 ? 'bg-red-100' : idx % 3 === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}></div>
                           <div>
-                            <p className="font-medium text-gray-800">{session.title}</p>
-                            <p className="text-sm text-gray-500">{session.date}</p>
+                            <p className="font-medium text-gray-800">{session.title || 'Untitled Session'}</p>
+                            <p className="text-sm text-gray-500">
+                              {session.date ? new Date(session.date).toLocaleDateString() : 'No date set'}
+                              {session.time ? ` at ${session.time}` : ''}
+                            </p>
                           </div>
                         </div>
-                        <span className="text-sm font-medium text-gray-600">{session.time}</span>
+                        {session.time && (
+                          <span className="text-sm font-medium text-gray-600">{session.time}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -227,36 +275,76 @@ const StudentDashboard = () => {
 
             <div className="space-y-6">
               <Card title="Latest Message" subtitle="From your mentor" icon={<MessageSquare className="w-5 h-5" />}>
-                <div className="p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border border-green-100">
-                  <div className="flex items-start gap-3">
-                    <img src="https://i.pravatar.cc/32" alt="mentor" className="w-8 h-8 rounded-full border-2 border-white shadow-sm" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">Mentor Rahul</p>
-                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                        "Hi Harshad! Great progress on the React components. Don't forget to practice hooks before our next session. 🚀"
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">2 hours ago</p>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-48">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : !latestMessage ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-center py-16"
+                  >
+                    <p className="text-gray-500">No messages yet</p>
+                  </motion.div>
+                ) : (
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border border-green-100">
+                    <div className="flex items-start gap-3">
+                      <img 
+                        src={latestMessage.sender?.profilePicture || "https://i.pravatar.cc/32"} 
+                        alt="mentor" 
+                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm" 
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">
+                          {latestMessage.sender?.fullName || 'Unknown sender'}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                          {latestMessage.content || 'No message content'}
+                        </p>
+                        {latestMessage.createdAt && (
+                          <p className="text-xs text-gray-400 mt-2">
+                            {new Date(latestMessage.createdAt).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </Card>
 
               <Card title="Recent Notifications" subtitle="Stay updated" icon={<Bell className="w-5 h-5" />}>
-                <div className="space-y-3">
-                  {[
-                    { text: "New blog added: Mastering Redux", type: "blog", time: "1h ago" },
-                    { text: "Session with Rahul scheduled", type: "session", time: "3h ago" },
-                    { text: "React Quiz unlocked", type: "quiz", time: "5h ago" },
-                  ].map((notification, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-700">{notification.text}</p>
-                        <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-48">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-center py-16"
+                  >
+                    <p className="text-gray-500">No notifications yet</p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    {notifications.slice(0, 3).map((notification, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div className={`w-2 h-2 rounded-full mt-2 ${notification.read ? 'bg-gray-400' : 'bg-blue-500'}`}></div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-700">{notification.message || 'No message'}</p>
+                          {notification.createdAt && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {new Date(notification.createdAt).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </Card>
             </div>
           </div>

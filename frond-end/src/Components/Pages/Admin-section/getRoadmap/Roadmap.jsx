@@ -10,7 +10,7 @@ const AdminRoadmaps = () => {
   const [filteredRoadmaps, setFilteredRoadmaps] = useState([]);
   const [selectedRoadmap, setSelectedRoadmap] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [roadmapsPerPage] = useState(5);
+  const [roadmapsPerPage] = useState(6); // Changed to 6 for better grid layout
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
@@ -60,11 +60,10 @@ const AdminRoadmaps = () => {
     }
   };
 
- 
   const publishRoadmap = async (id) => {
     try {
       await axios.patch(
-        `http://localhost:5000/api/admin/roadmaps/unpublish/${id}`,
+        `http://localhost:5000/api/admin/roadmaps/publish/${id}`,
         {},
         { withCredentials: true }
       );
@@ -74,7 +73,6 @@ const AdminRoadmaps = () => {
       alert("Failed to publish roadmap. Please try again.");
     }
   };
-
 
   const unpublishRoadmap = async (id) => {
     try {
@@ -109,11 +107,11 @@ const AdminRoadmaps = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto min-h-screen bg-gray-50">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto min-h-screen bg-gray-50 mt-10">
       <div className="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
         <div className="flex flex-col space-y-4 mb-6">
           <button
-            onClick={() => navigate(-1)} // Go back to previous page
+            onClick={() => navigate(-1)}
             className="flex items-center text-blue-600 hover:text-blue-800 w-max"
           >
             <FaArrowLeft className="mr-2" />
@@ -154,144 +152,144 @@ const AdminRoadmaps = () => {
             </div>
           </motion.div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-blue-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                    Mentor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentRoadmaps.map((roadmap) => (
-                  <motion.tr 
-                    key={roadmap._id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="hover:bg-blue-50"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                      {roadmap.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                      {roadmap.createdBy?.fullName || "Unknown"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {roadmap.isPublished ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <FaCheckCircle className="mr-1" /> Published
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <FaTimesCircle className="mr-1" /> Unpublished
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="p-2 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                        onClick={() => setSelectedRoadmap(roadmap)}
-                        title="View Details"
-                      >
-                        <FaEye />
-                      </motion.button>
-                      {roadmap.isPublished ? (
+          <>
+            {/* Card Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentRoadmaps.map((roadmap) => (
+                <motion.div
+                  key={roadmap._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300"
+                >
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="text-lg font-bold text-gray-800 truncate">{roadmap.title}</h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        roadmap.isPublished 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {roadmap.isPublished ? (
+                          <FaCheckCircle className="mr-1" />
+                        ) : (
+                          <FaTimesCircle className="mr-1" />
+                        )}
+                        {roadmap.isPublished ? "Published" : "Unpublished"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-gray-600 mb-4">
+                      <span className="truncate">
+                        By: {roadmap.createdBy?.fullName || "Unknown"}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {roadmap.description || "No description provided"}
+                    </p>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-600 font-medium">
+                        ₹{roadmap.price || "0"}
+                      </span>
+                      
+                      <div className="flex space-x-2">
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="p-2 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"
-                          onClick={() => unpublishRoadmap(roadmap._id)}
-                          title="Unpublish"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                          onClick={() => setSelectedRoadmap(roadmap)}
+                          title="View Details"
                         >
-                          <MdUnpublished />
+                          <FaEye size={14} />
                         </motion.button>
-                      ) : (
+                        
+                        {roadmap.isPublished ? (
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 rounded-full bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"
+                            onClick={() => unpublishRoadmap(roadmap._id)}
+                            title="Unpublish"
+                          >
+                            <MdUnpublished size={14} />
+                          </motion.button>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                            onClick={() => publishRoadmap(roadmap._id)}
+                            title="Publish"
+                          >
+                            <MdPublish size={14} />
+                          </motion.button>
+                        )}
+                        
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="p-2 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                          onClick={() => publishRoadmap(roadmap._id)}
-                          title="Publish"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                          onClick={() => deleteRoadmap(roadmap._id)}
+                          title="Delete"
                         >
-                          <MdPublish />
+                          <FaTrash size={14} />
                         </motion.button>
-                      )}
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="p-2 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                        onClick={() => deleteRoadmap(roadmap._id)}
-                        title="Delete"
-                      >
-                        <FaTrash />
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-blue-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-b-lg">
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing <span className="font-medium">{indexOfFirstRoadmap + 1}</span> to{" "}
-                      <span className="font-medium">
-                        {Math.min(indexOfLastRoadmap, filteredRoadmaps.length)}
-                      </span>{" "}
-                      of <span className="font-medium">{filteredRoadmaps.length}</span> results
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        &larr; Previous
-                      </button>
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentPage(i + 1)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === i + 1
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Next &rarr;
-                      </button>
-                    </nav>
-                  </div>
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-blue-50 rounded-lg">
+                <div className="mb-4 sm:mb-0">
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{indexOfFirstRoadmap + 1}</span> to{" "}
+                    <span className="font-medium">
+                      {Math.min(indexOfLastRoadmap, filteredRoadmaps.length)}
+                    </span>{" "}
+                    of <span className="font-medium">{filteredRoadmaps.length}</span> roadmaps
+                  </p>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${
+                        currentPage === i + 1
+                          ? "bg-blue-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -299,7 +297,7 @@ const AdminRoadmaps = () => {
       <AnimatePresence>
         {selectedRoadmap && (
           <motion.div
-            className="fixed inset-0 bg-white bg-opacity-90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

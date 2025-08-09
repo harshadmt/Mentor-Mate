@@ -25,11 +25,11 @@ const notificationRoutes = require('./router/notificationRouter')
 const adminRoutes = require('./router/AdminRoutes')
 const errorHandling = require('./middleware/errorMiddleWare');
 
-// Initialize app & server
+
 const app = express();
 const server = http.createServer(app);
 
-// Connect MongoDB
+
 db();
 
 // Setup Socket.IO
@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('user-joined', { userId, socketId: socket.id });
   });
 
-  // 🔸 WebRTC signaling
+  //  WebRTC signaling
   socket.on('offer', ({ target, offer }) => {
     io.to(target).emit('receive-offer', { sender: socket.id, offer });
   });
@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
     io.to(target).emit('receive-ice-candidate', { sender: socket.id, candidate });
   });
 
-  // 🔸 WebRTC: disconnect
+  //  WebRTC: disconnect
   socket.on('disconnect', async () => {
     const { roomId, userId } = socket;
     if (roomId && userId) {
@@ -126,7 +126,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// 📦 Middleware
+//  Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
@@ -156,7 +156,7 @@ app.use(errorHandling);
 //  Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });
 
 //  Unhandled Promise Rejection

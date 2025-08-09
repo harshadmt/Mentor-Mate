@@ -13,7 +13,7 @@ const AdminUsers = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10);
+  const [usersPerPage] = useState(9); // Changed to 9 for better grid layout (3x3)
   const navigate = useNavigate();
 
   // Default profile image
@@ -167,130 +167,145 @@ const AdminUsers = () => {
             </button>
           </motion.div>
         ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-100"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="p-4 text-left">User</th>
-                    <th className="p-4 text-left">Email</th>
-                    <th className="p-4 text-left">Role</th>
-                    <th className="p-4 text-center">Status</th>
-                    <th className="p-4 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentUsers.map((user) => (
-                    <motion.tr
-                      key={user._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="border-b border-blue-50 hover:bg-blue-50 transition"
-                    >
-                      <td className="p-4">
-                        <div className="flex items-center">
-                          <img
-                            src={user.profilePicture || defaultProfilePic}
-                            alt="Profile"
-                            className="w-10 h-10 rounded-full border-2 border-blue-200 mr-3 bg-gray-100"
-                          />
-                          <span className="font-medium text-blue-800">{user.fullName}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-blue-600">{user.email}</td>
-                      <td className="p-4">
-                        <span className="capitalize px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
+          <>
+            {/* Card Grid Layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentUsers.map((user) => (
+                <motion.div
+                  key={user._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+                >
+                  <div className="p-5">
+                    {/* User Header */}
+                    <div className="flex items-center mb-4">
+                      <img
+                        src={user.profilePicture || defaultProfilePic}
+                        alt="Profile"
+                        className="w-12 h-12 rounded-full border-2 border-blue-200 mr-3 bg-gray-100"
+                      />
+                      <div>
+                        <h3 className="font-bold text-blue-800 truncate">{user.fullName}</h3>
+                        <p className="text-sm text-blue-600 truncate">{user.email}</p>
+                      </div>
+                    </div>
+
+                    {/* User Details */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Role</p>
+                        <p className="text-sm font-medium capitalize">{user.role}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Status</p>
+                        <p className={`text-sm font-medium ${
+                          user.isBlocked ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {user.isBlocked ? "Blocked" : "Active"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Created</p>
+                        <p className="text-sm font-medium">
+                          {new Date(user.createdAt || Date.now()).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-between space-x-2">
+                      <button
+                        onClick={() => toggleBlock(user._id)}
+                        className={`flex-1 px-3 py-2 rounded-lg text-white text-sm font-medium flex items-center justify-center ${
+                          user.isBlocked
+                            ? "bg-green-500 hover:bg-green-600"
+                            : "bg-red-500 hover:bg-red-600"
+                        }`}
+                      >
                         {user.isBlocked ? (
-                          <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium inline-flex items-center">
-                            <FaLock className="mr-1" size={12} />
-                            Blocked
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium inline-flex items-center">
+                          <>
                             <FaUnlock className="mr-1" size={12} />
-                            Active
-                          </span>
+                            Unblock
+                          </>
+                        ) : (
+                          <>
+                            <FaLock className="mr-1" size={12} />
+                            Block
+                          </>
                         )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex justify-center space-x-2">
-                          <button
-                            onClick={() => toggleBlock(user._id)}
-                            className={`px-3 py-1 rounded-lg text-white text-sm font-medium flex items-center transition-all ${
-                              user.isBlocked
-                                ? "bg-green-500 hover:bg-green-600"
-                                : "bg-red-500 hover:bg-red-600"
-                            }`}
-                          >
-                            {user.isBlocked ? (
-                              <>
-                                <FaUnlock className="mr-1" size={12} />
-                                Unblock
-                              </>
-                            ) : (
-                              <>
-                                <FaLock className="mr-1" size={12} />
-                                Block
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => viewUser(user)}
-                            className="px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium flex items-center"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+                      </button>
+                      <button
+                        onClick={() => viewUser(user)}
+                        className="flex-1 px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium flex items-center justify-center"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
             {/* Pagination */}
             {filteredUsers.length > usersPerPage && (
-              <div className="flex justify-between items-center p-4 border-t border-gray-200">
-                <button
-                  onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg flex items-center ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                >
-                  <FaChevronLeft className="mr-2" />
-                  Previous
-                </button>
-                <div className="flex space-x-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                    <button
-                      key={number}
-                      onClick={() => paginate(number)}
-                      className={`w-10 h-10 rounded-full ${currentPage === number ? 'bg-blue-600 text-white' : 'text-blue-600 hover:bg-blue-50'}`}
-                    >
-                      {number}
-                    </button>
-                  ))}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="mb-4 sm:mb-0">
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{" "}
+                    <span className="font-medium">
+                      {Math.min(indexOfLastUser, filteredUsers.length)}
+                    </span>{" "}
+                    of <span className="font-medium">{filteredUsers.length}</span> users
+                  </p>
                 </div>
-                <button
-                  onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg flex items-center ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                >
-                  Next
-                  <FaChevronRight className="ml-2" />
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded-md border ${
+                      currentPage === 1
+                        ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                        : "border-blue-300 text-blue-600 hover:bg-blue-50"
+                    }`}
+                  >
+                    <FaChevronLeft className="inline mr-1" />
+                    Previous
+                  </button>
+                  
+                  <div className="flex space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                      <button
+                        key={number}
+                        onClick={() => paginate(number)}
+                        className={`w-8 h-8 rounded-md ${
+                          currentPage === number
+                            ? "bg-blue-600 text-white"
+                            : "text-blue-600 hover:bg-blue-50 border border-blue-200"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-md border ${
+                      currentPage === totalPages
+                        ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                        : "border-blue-300 text-blue-600 hover:bg-blue-50"
+                    }`}
+                  >
+                    Next
+                    <FaChevronRight className="inline ml-1" />
+                  </button>
+                </div>
               </div>
             )}
-          </motion.div>
+          </>
         )}
       </div>
 
@@ -301,7 +316,7 @@ const AdminUsers = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={closeModal}
           >
             <motion.div
@@ -383,10 +398,10 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 flex justify-center space-x-4">
+                <div className="mt-8 flex justify-center">
                   <button
                     onClick={() => toggleBlock(selectedUser._id)}
-                    className={`px-4 py-2 rounded-lg text-white font-medium flex items-center ${
+                    className={`px-6 py-2 rounded-lg text-white font-medium flex items-center ${
                       selectedUser.isBlocked
                         ? "bg-green-500 hover:bg-green-600"
                         : "bg-red-500 hover:bg-red-600"

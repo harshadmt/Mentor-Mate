@@ -31,6 +31,15 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
+  const [stats, setStats] = useState({
+  totalUsers: 0,
+  totalMentors: 0,
+  totalStudents: 0,
+  totalRoadmaps: 0,
+  totalSessions: 0,
+  totalRevenue: 0
+});
+
 
   const admin = {
     name: user?.name || "Admin",
@@ -45,7 +54,18 @@ const AdminDashboard = () => {
     { icon: <Settings />, label: "Settings", to: "/admin/settings" },
     { icon: <LogOut />, label: "Logout", to: "/logout", danger: true },
   ];
-
+  useEffect (()=>{
+    const fetchstats = async()=>{
+      try{
+        const res = await axios.get("http://localhost:5000/api/admin/stats", {withCredentials:true});
+        setStats(res.data)
+      }catch(error){
+        console.error ('error fetching stats',error);
+        toast.error('failed to load stats')
+      }
+    };
+    fetchstats()
+  },[])
   // Simulate loading data
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -223,7 +243,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<Users />} 
             title="Total Users" 
-            value="1,024" 
+            value={stats.totalUsers}
             change="+12%" 
             gradient="from-blue-500 to-blue-600"
             trend="up"
@@ -231,7 +251,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<UserCheck />} 
             title="Active Mentors" 
-            value="150" 
+            value={stats.totalMentors}
             change="+8%" 
             gradient="from-green-500 to-green-600"
             trend="up"
@@ -239,7 +259,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<UserCircle2 />} 
             title="Students" 
-            value="874" 
+            value={stats.totalStudents}
             change="+15%" 
             gradient="from-purple-500 to-purple-600"
             trend="up"
@@ -247,7 +267,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<DollarSign />} 
             title="Revenue" 
-            value="$12.5K" 
+            value={stats.totalRevenue} 
             change="+22%" 
             gradient="from-emerald-500 to-teal-500"
             trend="up"
@@ -255,7 +275,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<FileText />} 
             title="Roadmaps" 
-            value="78" 
+            value={stats.totalRoadmaps}
             change="+6%" 
             gradient="from-indigo-500 to-purple-500"
             trend="up"
@@ -263,7 +283,7 @@ const AdminDashboard = () => {
           <StatsCard 
             icon={<Globe />} 
             title="Active Sessions" 
-            value="245" 
+            value={stats.totalSessions} 
             change="+18%" 
             gradient="from-pink-500 to-rose-500"
             trend="up"
@@ -311,7 +331,7 @@ const AdminDashboard = () => {
 
           {/* System Alerts */}
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            {/* <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">System Alerts</h3>
               <div className="space-y-3">
                 {[
@@ -342,7 +362,7 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Quick Actions */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">

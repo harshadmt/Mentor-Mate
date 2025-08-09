@@ -1,7 +1,7 @@
 const messageService = require('../services/MessageServices/messageServices');
 const mongoose = require('mongoose');
 const  NotificationService = require('../Services/NotifactionServices/notificationservice')
-
+const Message = require('../models/MessageModel')
 const sendMessage = async (req, res, next) => {
   try {
     const sender = req.user.id;
@@ -76,9 +76,33 @@ const getMessages = async (req, res, next) => {
     next(error);
   }
 };
+const getLatestMessage = async (req, res) => {
+  try {
+    const studentId = req.user._id; 
+    
 
+    const latestMessage = await Message.findOne({ receiver: studentId })
+      .sort({ createdAt: -1 })
+      .populate('sender', 'name email') 
+      .lean();
+
+    if (!latestMessage) {
+      return res.json(null); 
+    }
+
+    res.json({
+      from: latestMessage.sender.name || 'Unknown',
+      text: latestMessage.content,
+      time: latestMessage.createdAt
+    });
+  } catch (error) {
+    console.error('Error fetching latest message:', error);
+    res.status(500).json({ message: 'Server error fetching latest message.' });
+  }
+};
 module.exports = {
   sendMessage,
   getMessages,
+  getLatestMessage,
   
 };

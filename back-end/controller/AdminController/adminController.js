@@ -1,6 +1,8 @@
 const { getAllUsersService, BlockUserServices,getAllRoadmapsService, getRoadmapsbyIdServices,getUserByIdService } = require('../../Services/AdminServices/AdminServices');
 const Roadmap = require('../../models/roadmapModel');
-const Payment = require('../../models/paymentModel')
+const Payment = require('../../models/paymentModel');
+const User = require('../../models/usermodel');
+const videoSession = require('../../models/videoModel')
 const getAllUsers = async (req, res, next) => {
     try {
         const users = await getAllUsersService();
@@ -99,6 +101,32 @@ const getUserById = async (req, res, next) => {
     next(error);
   }
 };
+const getAdminStats = async (req,res)=>{
+  try{
+    const totalUsers = await User.countDocuments();
+    const totalMentors = await User.countDocuments({role:"mentor"});
+    const totalStudents = await User.countDocuments({role:'student'});
+    const totalRoadmaps = await Roadmap.countDocuments();
+    const totalSessions =  await videoSession.countDocuments();
+
+    const payments = await Payment.aggregate([
+      {$match:{status:'paid'}},
+      {$group :{_id:null,total:{$sum:"$amount"}}}
+    ]);
+    const totalRevenue = payments.length >0 ?payments[0].total:0;
+    res.json({
+      totalUsers,
+      totalMentors,
+      totalStudents,
+      totalRoadmaps,
+      totalSessions,
+      totalRevenue
+    });
+  }catch(error){
+    console.error('Error fetching admin stats:',error);
+    res.status(500).json({message:'server error'})
+  }
+}
 module.exports = {
   getAllUsers,
   BlockUsers,
@@ -108,4 +136,5 @@ module.exports = {
   publishRoadmap,
   getAllPayments,
   getUserById,
+  getAdminStats,
 };
