@@ -21,11 +21,16 @@ import { motion } from "framer-motion";
 const StudentDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useUserStore();
-  const [schedule, setSchedule] = useState([]);
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [latestMessage, setLatestMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    purchasedMentorCount: 0,
+    purchasedRoadmapsCount: 0,
+    sessionCount: 0
+  });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -34,25 +39,35 @@ const StudentDashboard = () => {
         
         // Fetch all data in parallel with error handling for each request
         const results = await Promise.allSettled([
-          axios.get('http://localhost:5000/api/videosession', { withCredentials: true }),
-          axios.get('http://localhost:5000/api/message/student/latest-message', { withCredentials: true }),
-          axios.get('http://localhost:5000/api/notifications', { withCredentials: true })
+          axios.get('http://localhost:5000/api/student/dashboard/upcoming', { withCredentials: true }),
+          axios.get('http://localhost:5000/api/student/dashboard/latestmessage', { withCredentials: true }),
+          axios.get('http://localhost:5000/api/student/dashboard/latestnotification', { withCredentials: true }),
+          axios.get('http://localhost:5000/api/student/dashboard/stats', { withCredentials: true })
         ]);
 
-        // Handle schedule response
+        // Handle upcoming sessions response
         if (results[0].status === 'fulfilled') {
-          const scheduleData = results[0].value.data;
-          setSchedule(Array.isArray(scheduleData) ? scheduleData : []);
+          const sessionsData = results[0].value.data;
+          if (sessionsData?.success) {
+            setUpcomingSessions(Array.isArray(sessionsData.data) ? sessionsData.data : []);
+          } else {
+            console.error('Error in upcoming sessions response:', sessionsData?.message);
+            toast.error(sessionsData?.message || 'Failed to load upcoming sessions');
+          }
         } else {
-          console.error('Error fetching schedule:', results[0].reason);
-          toast.error('Failed to load schedule');
+          console.error('Error fetching upcoming sessions:', results[0].reason);
+          toast.error('Failed to load upcoming sessions');
         }
 
         // Handle latest message response
         if (results[1].status === 'fulfilled') {
-          // Check if data exists and has latestMessage property
           const messageData = results[1].value.data;
-          setLatestMessage(messageData?.latestMessage || null);
+          if (messageData?.success) {
+            setLatestMessage(messageData.data || null);
+          } else {
+            console.error('Error in latest message response:', messageData?.message);
+            toast.error(messageData?.message || 'Failed to load latest message');
+          }
         } else {
           console.error('Error fetching latest message:', results[1].reason);
           toast.error('Failed to load messages');
@@ -60,12 +75,31 @@ const StudentDashboard = () => {
 
         // Handle notifications response
         if (results[2].status === 'fulfilled') {
-          // Check if data exists and has notifications property
           const notificationsData = results[2].value.data;
-          setNotifications(Array.isArray(notificationsData?.notifications) ? notificationsData?.notifications : []);
+          if (notificationsData?.success) {
+            setNotifications(notificationsData.data ? [notificationsData.data] : []);
+          } else {
+            console.error('Error in notifications response:', notificationsData?.message);
+            toast.error(notificationsData?.message || 'Failed to load notifications');
+          }
         } else {
           console.error('Error fetching notifications:', results[2].reason);
           toast.error('Failed to load notifications');
+        }
+
+        // Handle stats response
+        if (results[3].status === 'fulfilled') {
+          const statsData = results[3].value.data;
+          if (statsData?.success) {
+            setStats({
+              purchasedMentorCount: statsData.data?.purchasedMentorCount || 0,
+              purchasedRoadmapsCount: statsData.data?.purchasedRoadmapsCount || 0,
+              sessionCount: statsData.data?.sessionCount || 0
+            });
+          }
+        } else {
+          console.error('Error fetching stats:', results[3].reason);
+          toast.error('Failed to load dashboard stats');
         }
 
       } catch (err) {
@@ -100,8 +134,26 @@ const StudentDashboard = () => {
     }
   };
 
-  // Safe access to schedule data
-  const nextSession = schedule.length > 0 ? schedule[0] : null;
+  // Format session date and time
+  const formatSessionDateTime = (session) => {
+    if (!session.scheduledAt) return 'No date set';
+    
+    const date = new Date(session.scheduledAt);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    return `${formattedDate} at ${formattedTime}`;
+  };
+
+  // Safe access to upcoming sessions data
+  const nextSession = upcomingSessions.length > 0 ? upcomingSessions[0] : null;
 
   return (
     <>
@@ -186,10 +238,34 @@ const StudentDashboard = () => {
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard icon={<BookOpen className="w-6 h-6" />} title="Enrolled Courses" value="5" change="+2 this month" color="blue" />
-            <StatCard icon={<GraduationCap className="w-6 h-6" />} title="Progress" value="68%" change="+12% this week" color="green" />
-            <StatCard icon={<CalendarDays className="w-6 h-6" />} title="Study Hours" value="42h" change="This month" color="purple" />
-            <StatCard icon={<MessageSquare className="w-6 h-6" />} title="Live Sessions" value="8" change="Completed" color="orange" />
+            <StatCard 
+              icon={<BookOpen className="w-6 h-6" />} 
+              title="Purchased Roadmaps" 
+              value={stats.purchasedRoadmapsCount} 
+              change="Your learning paths" 
+              color="blue" 
+            />
+            <StatCard 
+              icon={<GraduationCap className="w-6 h-6" />} 
+              title="Mentors" 
+              value={stats.purchasedMentorCount} 
+              change="Experts guiding you" 
+              color="green" 
+            />
+            <StatCard 
+              icon={<CalendarDays className="w-6 h-6" />} 
+              title="Sessions" 
+              value={stats.sessionCount} 
+              change="Learning sessions" 
+              color="purple" 
+            />
+            <StatCard 
+              icon={<MessageSquare className="w-6 h-6" />} 
+              title="Progress" 
+              value="68%" 
+              change="This month" 
+              color="orange" 
+            />
           </div>
 
           {/* Main Cards Section */}
@@ -212,22 +288,24 @@ const StudentDashboard = () => {
                 ) : (
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                     <div>
-                      <h3 className="font-semibold text-gray-800">{nextSession.title || 'Untitled Session'}</h3>
+                      <h3 className="font-semibold text-gray-800">{nextSession.topic || 'Untitled Session'}</h3>
                       <p className="text-sm text-gray-600">
-                        {nextSession.date ? new Date(nextSession.date).toLocaleDateString() : 'No date set'} 
-                        {nextSession.time ? ` at ${nextSession.time}` : ''}
+                        {formatSessionDateTime(nextSession)}
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
-                        {nextSession.mentorName ? `with Mentor ${nextSession.mentorName}` : 'No mentor assigned'}
+                        {nextSession.mentor?.fullName ? `with Mentor ${nextSession.mentor.fullName}` : 'No mentor assigned'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 capitalize">
+                        Status: {nextSession.status || 'unknown'}
                       </p>
                     </div>
-                    {nextSession.time && (
+                    {nextSession.scheduledAt && (
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">
-                          {nextSession.time.split(':')[0]}
+                          {new Date(nextSession.scheduledAt).getHours()}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {parseInt(nextSession.time.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                          {new Date(nextSession.scheduledAt).getHours() >= 12 ? 'PM' : 'AM'}
                         </div>
                       </div>
                     )}
@@ -235,36 +313,40 @@ const StudentDashboard = () => {
                 )}
               </Card>
 
-              <Card title="This Week's Schedule" subtitle="Your learning roadmap" icon={<CalendarDays className="w-5 h-5" />}>
+              <Card title="Upcoming Sessions" subtitle="Your learning roadmap" icon={<CalendarDays className="w-5 h-5" />}>
                 {isLoading ? (
                   <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : schedule.length === 0 ? (
+                ) : upcomingSessions.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
                     className="text-center py-20"
                   >
-                    <p className="text-gray-500">No sessions scheduled this week</p>
+                    <p className="text-gray-500">No sessions scheduled</p>
                   </motion.div>
                 ) : (
                   <div className="space-y-3">
-                    {schedule.map((session, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    {upcomingSessions.map((session, idx) => (
+                      <div key={session._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${idx % 3 === 0 ? 'bg-red-100' : idx % 3 === 1 ? 'bg-yellow-100' : 'bg-blue-100'}`}></div>
                           <div>
-                            <p className="font-medium text-gray-800">{session.title || 'Untitled Session'}</p>
+                            <p className="font-medium text-gray-800">{session.topic || 'Untitled Session'}</p>
                             <p className="text-sm text-gray-500">
-                              {session.date ? new Date(session.date).toLocaleDateString() : 'No date set'}
-                              {session.time ? ` at ${session.time}` : ''}
+                              {formatSessionDateTime(session)}
+                            </p>
+                            <p className="text-xs text-blue-600 mt-1">
+                              {session.mentor?.fullName ? `with ${session.mentor.fullName}` : 'No mentor assigned'}
                             </p>
                           </div>
                         </div>
-                        {session.time && (
-                          <span className="text-sm font-medium text-gray-600">{session.time}</span>
+                        {session.scheduledAt && (
+                          <span className="text-sm font-medium text-gray-600">
+                            {new Date(session.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         )}
                       </div>
                     ))}
@@ -330,11 +412,14 @@ const StudentDashboard = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.slice(0, 3).map((notification, idx) => (
+                    {notifications.map((notification, idx) => (
                       <div key={idx} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                         <div className={`w-2 h-2 rounded-full mt-2 ${notification.read ? 'bg-gray-400' : 'bg-blue-500'}`}></div>
                         <div className="flex-1">
-                          <p className="text-sm text-gray-700">{notification.message || 'No message'}</p>
+                          <p className="text-sm text-gray-700">{notification.content || 'No message'}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            From: {notification.sender?.fullName || 'System'}
+                          </p>
                           {notification.createdAt && (
                             <p className="text-xs text-gray-400 mt-1">
                               {new Date(notification.createdAt).toLocaleTimeString()}

@@ -33,6 +33,8 @@ import StudentNotifications from "./Components/Pages/studentsection/Notification
 import MentorNotifications from "./Components/Pages/mentor-section/Notification";
 import AdminUsers from "./Components/Pages/Admin-section/getUser/ManageUser";
 import AdminRoadmaps from "./Components/Pages/Admin-section/getRoadmap/Roadmap";
+import AllTransactions from "./Components/Pages/Admin-section/transactions/Transaction";
+import AdminSettingsPage from "./Components/Pages/Admin-section/AdminSetting/adminSetting";
 
 
 
@@ -86,6 +88,8 @@ function App() {
           <Route path="/admin/admindashboard" element={<AdminDashboard />}/>
           <Route path="/admin/adminUser" element ={<AdminUsers/>}/>
           <Route path="/admin/adminRoadmap" element={<AdminRoadmaps/>}/>
+          <Route path="/admin/transaction" element={<AllTransactions/>}/>
+           <Route path="/admin/setting" element ={<AdminSettingsPage/>}/>
         </Route>
       </Routes>
     </Router>

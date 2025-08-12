@@ -15,14 +15,17 @@ exports.login = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,
+      secure: false, 
+      
       sameSite: 'Strict',
-      maxAge: 24 * 60 * 60 * 1000, 
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.json({ message: 'Login successful', token, user });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message });
   }
 };
 

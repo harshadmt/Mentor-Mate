@@ -1,8 +1,10 @@
 const User = require('../../models/usermodel');
-const Roadmap = require('../../models/roadmapModel')
+const Roadmap = require('../../models/roadmapModel');
+const Payment  = require('../../models/paymentModel')
 const mongoose = require('mongoose')
+const adminSettings = require('../../models/AdminSettingModel')
 
-//get all users
+
 const getAllUsersService = async () => {
     const users = await User.find().select('-password');
     if (!users || users.length === 0) {
@@ -12,7 +14,8 @@ const getAllUsersService = async () => {
     }
     return users;
 };
-///block and unblock users code
+
+
 const BlockUserServices = async (userId) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     const error = new Error('Invalid user ID');
@@ -65,11 +68,100 @@ const getUserByIdService = async (userId) => {
   }
   return user;
 };
+const getUserDetailsWithPaymentServices = async (userId)=>{
+  const user = await User.findById(userId)
+  .select('-password')
+  .populate("unlockedRoadmaps", "title description price")
+  .populate("createdRoadmaps", "title description price");
 
+  if(!user){
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error
+  }
+
+  const payment  = await Payment.find({studentId:userId})
+  .populate('roadmapId',"title price")
+  .sort({ createdAt: -1})
+
+  return{user,payment}
+ };
+ const getAllTransactionsServices= async () => {
+  try {
+    const payments = await Payment.find()
+      .populate("studentId", "fullName email role") 
+      .populate("roadmapId", "title price")   
+      .sort({ createdAt: -1 });                     
+      
+
+    return payments;
+  } catch (error) {
+    throw new Error("Error fetching all payments: " + error.message);
+  }
+};
+
+const  getSettings =  async () => {
+    let settings = await adminSettings.findOne();
+    if (!settings) {
+      settings = await adminSettings.create({});
+    }
+    return settings;
+  }
+
+  const   updateSettings = async (updates) => {
+    let settings = await adminSettings.findOne();
+    if (!settings) {
+      settings = await adminSettings.create(updates);
+    } else {
+      Object.assign(settings, updates);
+      await settings.save();
+    }
+    return settings;
+  }
+  const updateAdminProfile =  async (adminId, profileData) => {
+    const allowedFields = [
+      'fullName',
+      'email',
+      'bio',
+      'profilePicture',
+      'skills'
+    ];
+
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (profileData[field] !== undefined) {
+        updates[field] = profileData[field];
+      }
+    });
+
+    const updatedAdmin = await User.findOneAndUpdate(
+      { _id: adminId, role: 'admin' },
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    return updatedAdmin;
+  }
+
+const getAdminProfile = async (adminId) => {
+  // Find admin by ID and role = 'admin'
+  const admin = await User.findOne({ _id: adminId, role: 'admin' }).select('-password');
+  if (!admin) {
+    throw new Error('Admin not found or unauthorized');
+  }
+  return admin;
+};
 module.exports = {
     getAllUsersService,
     BlockUserServices,
     getAllRoadmapsService,
     getRoadmapsbyIdServices,
     getUserByIdService,
+    getUserDetailsWithPaymentServices,
+    getAllTransactionsServices,
+    getSettings,
+    updateSettings,
+    updateAdminProfile,
+    getAdminProfile,
+  
 };

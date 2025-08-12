@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 const db = require('./config/db');
 const VideoSessionService = require('./Services/VideoSessionServices/VideoSession');
 const NotificationService = require('./Services/NotifactionServices/notificationservice');
-
+const maintenanceMiddleware = require('./middleware/MaintenanceMiddleware')
 // Load env variables
 dotenv.config();
 
@@ -138,28 +138,27 @@ app.use(cookieParser());
 app.set('io', io);
 
 //API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',authRoutes);
 app.use('/api', protectedRoute);
 app.use('/api/roadmaps', RoadmapRoutes);
 app.use('/api/user', userRoute);
 app.use('/api/payment', paymentRouter);
-app.use('/api/student', studentRouter);
+app.use('/api/student',maintenanceMiddleware, studentRouter);
 app.use('/api/message', messageRoutes);
-app.use('/api/mentor', mentorRoutes);
+app.use('/api/mentor',maintenanceMiddleware,mentorRoutes);
 app.use('/api/videosession', VideoSessionRoutes);
 app.use('/api/notifications',notificationRoutes);
 app.use('/api/admin',adminRoutes)
 
-// Global error handler
+
+
 app.use(errorHandling);
 
-//  Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(` Server running on port ${PORT}`);
 });
 
-//  Unhandled Promise Rejection
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   server.close(() => process.exit(1));

@@ -36,6 +36,7 @@ const VideoCallPage = () => {
   const containerRef = useRef(null);
   const socketRef = useRef(socket);
   const joinedRef = useRef(false);
+  const pendingCandidatesRef = useRef([]);
 
   const [connected, setConnected] = useState(false);
   const [micOn, setMicOn] = useState(true);
@@ -149,7 +150,7 @@ const VideoCallPage = () => {
   const handleUserJoined = useCallback((data) => {
     console.log("User joined:", data);
     setConnected(true);
-    if (peerRef.current) return; // Prevent duplicate peer creation
+    if (peerRef.current) return;
     const peer = createPeer(data.userId);
     peerRef.current = peer;
     
@@ -167,12 +168,22 @@ const VideoCallPage = () => {
   const handleReceiveOffer = useCallback(async (data) => {
     console.log("Received offer:", data);
     setConnected(true);
-    if (peerRef.current) return; // Prevent duplicate peer creation
+    if (peerRef.current) return;
     const peer = createPeer(data.sender);
     peerRef.current = peer;
 
     try {
       await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+      for (const candidate of pendingCandidatesRef.current) {
+        try {
+          await peer.addIceCandidate(candidate);
+        } catch (err) {
+          console.error("Error adding pending ICE candidate:", err);
+        }
+      }
+      pendingCandidatesRef.current = [];
+
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
 
@@ -190,19 +201,30 @@ const VideoCallPage = () => {
     if (peerRef.current) {
       try {
         await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+        for (const candidate of pendingCandidatesRef.current) {
+          try {
+            await peerRef.current.addIceCandidate(candidate);
+          } catch (err) {
+            console.error("Error adding pending ICE candidate:", err);
+          }
+        }
+        pendingCandidatesRef.current = [];
       } catch (err) {
         console.error("Error handling answer:", err);
       }
     }
   }, []);
 
-  const handleNewICECandidate = useCallback(async (data) => {
+  const handleNewICECandidate = useCallback((data) => {
     console.log("Received ICE candidate:", data);
     if (data.candidate && peerRef.current) {
-      try {
-        await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-      } catch (err) {
-        console.error("Error adding ICE candidate:", err);
+      const candidate = new RTCIceCandidate(data.candidate);
+      if (peerRef.current.remoteDescription) {
+        peerRef.current.addIceCandidate(candidate)
+          .catch(err => console.error("Error adding ICE candidate:", err));
+      } else {
+        pendingCandidatesRef.current.push(candidate);
       }
     }
   }, []);
@@ -348,11 +370,30 @@ const VideoCallPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-6">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-lg border border-blue-100 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold mb-2">Setting up your call...</h2>
-          <p className="text-blue-600">Please wait while we access your camera and microphone</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-300 rounded-full opacity-10 animate-ping"></div>
+          <div className="absolute top-1/2 left-1/4 w-48 h-48 bg-blue-100 rounded-full opacity-30 animate-bounce"></div>
+        </div>
+        
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl border border-blue-200/50 text-center relative z-10 animate-fadeIn">
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 opacity-20 animate-pulse"></div>
+          </div>
+          <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            Setting up your call...
+          </h2>
+          <p className="text-blue-600 animate-pulse">Please wait while we access your camera and microphone</p>
+          
+          {/* Loading dots */}
+          <div className="flex justify-center space-x-1 mt-4">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+          </div>
         </div>
       </div>
     );
@@ -360,16 +401,28 @@ const VideoCallPage = () => {
 
   if (permissionError) {
     return (
-      <div className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-lg border border-blue-100">
-          <FaExclamationTriangle className="text-blue-500 text-4xl mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Permission Required</h2>
-          <p className="mb-6">{permissionError}</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-red-200 rounded-full opacity-10 animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-200 rounded-full opacity-10 animate-pulse"></div>
+        </div>
+        
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl border border-blue-200/50 relative z-10 animate-slideUp">
+          <div className="relative mb-6">
+            <FaExclamationTriangle className="text-yellow-500 text-5xl mx-auto animate-bounce" />
+            <div className="absolute inset-0 bg-yellow-200 rounded-full opacity-20 animate-ping"></div>
+          </div>
+          
+          <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            Permission Required
+          </h2>
+          <p className="mb-6 text-gray-700">{permissionError}</p>
           
           <div className="flex flex-col space-y-3">
             <button
               onClick={requestPermissionAgain}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
             >
               Try Again
             </button>
@@ -377,7 +430,7 @@ const VideoCallPage = () => {
             {!mediaState.isAudioDenied && mediaState.isVideoDenied && (
               <button
                 onClick={continueWithoutVideo}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
               >
                 Continue Audio Only
               </button>
@@ -385,15 +438,15 @@ const VideoCallPage = () => {
             
             <button
               onClick={() => navigate(-1)}
-              className="bg-white hover:bg-blue-50 text-blue-600 py-3 px-6 rounded-lg font-medium transition border border-blue-200"
+              className="bg-white hover:bg-blue-50 text-blue-600 py-3 px-6 rounded-xl font-medium transition-all duration-300 border border-blue-200 hover:border-blue-300 transform hover:scale-105"
             >
               Go Back
             </button>
           </div>
 
-          <div className="mt-8 text-sm text-blue-600">
+          <div className="mt-8 text-sm text-blue-600 bg-blue-50/50 rounded-xl p-4">
             <p className="mb-2 font-medium">Troubleshooting:</p>
-            <ul className="list-disc list-inside space-y-1 text-left mx-auto max-w-xs">
+            <ul className="list-disc list-inside space-y-1 text-left">
               <li>Check your browser's permission settings</li>
               <li>Make sure no other app is using your camera/mic</li>
               <li>Refresh the page and try again</li>
@@ -410,37 +463,53 @@ const VideoCallPage = () => {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-blue-50 text-blue-900 flex flex-col items-center justify-center p-4 relative"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center justify-center p-4 relative overflow-hidden"
     >
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-        <div className="bg-white rounded-full px-4 py-2 flex items-center shadow-sm border border-blue-100">
-          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-2">
-            <FaUser size={12} className="text-white" />
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-200 rounded-full opacity-5 animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-300 rounded-full opacity-5 animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-blue-100 to-white rounded-full opacity-10 animate-spin" style={{animationDuration: '20s'}}></div>
+      </div>
+
+      {/* Top header with enhanced styling */}
+      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10 animate-slideDown">
+        <div className="bg-white/90 backdrop-blur-lg rounded-full px-6 py-3 flex items-center shadow-lg border border-blue-200/50 hover:shadow-xl transition-all duration-300">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center mr-3 animate-pulse">
+              <FaUser size={14} className="text-white" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
-          <span className="font-medium">{remoteUser}</span>
-          <span className="mx-2 text-blue-300">•</span>
-          <span>{formatTime(callDuration)}</span>
+          <span className="font-semibold text-gray-800">{remoteUser}</span>
+          <span className="mx-3 text-blue-300">•</span>
+          <span className="font-mono font-medium text-blue-600">{formatTime(callDuration)}</span>
         </div>
-        <div className="flex gap-2">
+        
+        <div className="flex gap-3">
           <button 
             onClick={toggleFullscreen}
-            className="p-2 rounded-full bg-white hover:bg-blue-50 transition shadow-sm border border-blue-100"
+            className="p-3 rounded-full bg-white/90 backdrop-blur-lg hover:bg-white transition-all duration-300 shadow-lg border border-blue-200/50 hover:shadow-xl transform hover:scale-110"
             aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
-            {fullscreen ? <FaCompress size={16} className="text-blue-600" /> : <FaExpand size={16} className="text-blue-600" />}
+            {fullscreen ? <FaCompress size={18} className="text-blue-600" /> : <FaExpand size={18} className="text-blue-600" />}
           </button>
           <button 
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full bg-white hover:bg-blue-50 transition shadow-sm border border-blue-100"
+            className="p-3 rounded-full bg-white/90 backdrop-blur-lg hover:bg-white transition-all duration-300 shadow-lg border border-blue-200/50 hover:shadow-xl transform hover:scale-110"
             aria-label="Settings"
           >
-            <BsThreeDotsVertical size={16} className="text-blue-600" />
+            <BsThreeDotsVertical size={18} className="text-blue-600" />
           </button>
         </div>
       </div>
 
-      <div className={`relative w-full max-w-6xl ${fullscreen ? 'h-screen' : 'h-[80vh]'} rounded-xl overflow-hidden bg-white shadow-lg border border-blue-100`}>
-        <div className={`absolute inset-0 ${connected ? '' : 'flex items-center justify-center'}`}>
+      {/* Main video container with enhanced styling */}
+      <div className={`relative w-full max-w-6xl ${fullscreen ? 'h-screen' : 'h-[80vh]'} rounded-2xl overflow-hidden shadow-2xl border border-blue-200/50 backdrop-blur-lg animate-fadeIn`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-blue-100/20"></div>
+        
+        <div className={`relative inset-0 ${connected ? '' : 'flex items-center justify-center'} h-full`}>
           {connected ? (
             <video
               ref={remoteVideoRef}
@@ -449,20 +518,33 @@ const VideoCallPage = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="text-center p-6">
-              <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                <FaUser size={48} className="text-blue-400" />
+            <div className="text-center p-6 animate-slideUp">
+              <div className="relative mb-6">
+                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mx-auto animate-pulse">
+                  <FaUser size={60} className="text-blue-400" />
+                </div>
+                <div className="absolute inset-0 w-40 h-40 mx-auto rounded-full bg-blue-300 opacity-20 animate-ping"></div>
               </div>
-              <h3 className="text-xl font-medium mb-2">Waiting for {remoteUser} to join...</h3>
-              <p className="text-blue-500">
+              <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                Waiting for {remoteUser} to join...
+              </h3>
+              <p className="text-blue-600 text-lg">
                 You can start your {mediaState.hasVideo ? 'video' : 'audio'} call as soon as they join
               </p>
+              
+              {/* Animated waiting indicators */}
+              <div className="flex justify-center space-x-2 mt-6">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              </div>
             </div>
           )}
         </div>
 
+        {/* Enhanced local video preview */}
         {mediaState.hasVideo && (
-          <div className="absolute bottom-4 right-4 w-48 h-36 rounded-lg overflow-hidden border-2 border-white shadow-lg bg-blue-50">
+          <div className="absolute bottom-4 right-4 w-52 h-40 rounded-2xl overflow-hidden border-3 border-white shadow-2xl bg-blue-50 animate-slideUp">
             {cameraOn ? (
               <video
                 ref={localVideoRef}
@@ -472,27 +554,37 @@ const VideoCallPage = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                <FaVideoSlash size={32} className="text-blue-400" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                <FaVideoSlash size={36} className="text-blue-400 animate-pulse" />
               </div>
             )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <div className="flex gap-4 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
+      {/* Enhanced control buttons */}
+      <div className="absolute bottom-8 left-0 right-0 flex justify-center animate-slideUp">
+        <div className="flex gap-4 bg-white/90 backdrop-blur-lg rounded-2xl px-8 py-4 shadow-2xl border border-blue-200/50 hover:shadow-3xl transition-all duration-300">
           <button
             onClick={toggleMic}
             disabled={!mediaState.hasAudio}
-            className={`p-3 rounded-full flex flex-col items-center ${
-              !mediaState.hasAudio ? 'bg-blue-100 text-blue-400 cursor-not-allowed' :
-              micOn ? 'bg-blue-100 text-blue-600' : 'bg-red-500 text-white'
-            } hover:opacity-80 transition`}
+            className={`group relative p-4 rounded-2xl flex flex-col items-center transition-all duration-300 transform hover:scale-110 ${
+              !mediaState.hasAudio 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : micOn 
+                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-lg hover:shadow-xl' 
+                  : 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700'
+            }`}
             aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
           >
-            {micOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20} />}
-            <span className="text-xs mt-1">
+            <div className="relative">
+              {micOn ? <FaMicrophone size={24} /> : <FaMicrophoneSlash size={24} />}
+              {!micOn && (
+                <div className="absolute inset-0 bg-red-300 rounded-full opacity-30 animate-ping"></div>
+              )}
+            </div>
+            <span className="text-xs mt-2 font-medium">
               {!mediaState.hasAudio ? "No Mic" : micOn ? "Mute" : "Unmute"}
             </span>
           </button>
@@ -500,71 +592,137 @@ const VideoCallPage = () => {
           {mediaState.hasVideo && (
             <button
               onClick={toggleCamera}
-              className={`p-3 rounded-full flex flex-col items-center ${
-                cameraOn ? 'bg-blue-100 text-blue-600' : 'bg-red-500 text-white'
-              } hover:opacity-80 transition`}
+              className={`group relative p-4 rounded-2xl flex flex-col items-center transition-all duration-300 transform hover:scale-110 ${
+                cameraOn 
+                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-lg hover:shadow-xl' 
+                  : 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700'
+              }`}
               aria-label={cameraOn ? "Turn off camera" : "Turn on camera"}
             >
-              {cameraOn ? <FaVideo size={20} /> : <FaVideoSlash size={20} />}
-              <span className="text-xs mt-1">{cameraOn ? "Stop Video" : "Start Video"}</span>
+              <div className="relative">
+                {cameraOn ? <FaVideo size={24} /> : <FaVideoSlash size={24} />}
+                {!cameraOn && (
+                  <div className="absolute inset-0 bg-red-300 rounded-full opacity-30 animate-ping"></div>
+                )}
+              </div>
+              <span className="text-xs mt-2 font-medium">{cameraOn ? "Stop Video" : "Start Video"}</span>
             </button>
           )}
           
           <button
             onClick={endCall}
-            className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700 transition transform hover:scale-110 flex flex-col items-center"
+            className="group relative p-4 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl flex flex-col items-center"
             aria-label="End call"
           >
-            <FaPhoneSlash size={20} />
-            <span className="text-xs mt-1">End Call</span>
+            <div className="relative">
+              <FaPhoneSlash size={24} />
+              <div className="absolute inset-0 bg-red-300 rounded-full opacity-30 animate-pulse group-hover:animate-ping"></div>
+            </div>
+            <span className="text-xs mt-2 font-medium">End Call</span>
           </button>
         </div>
       </div>
 
+      {/* Enhanced settings panel */}
       {showSettings && (
-        <div className="absolute right-4 bottom-20 bg-white rounded-lg p-4 shadow-xl w-64 z-20 border border-blue-100">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="font-medium flex items-center text-blue-800">
-              <FaCog className="mr-2 text-blue-600" /> Settings
+        <div className="absolute right-4 bottom-24 bg-white/95 backdrop-blur-lg rounded-2xl p-6 shadow-2xl w-72 z-20 border border-blue-200/50 animate-slideUp">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-semibold flex items-center text-blue-800 text-lg">
+              <FaCog className="mr-2 text-blue-600 animate-spin" style={{animationDuration: '2s'}} /> Settings
             </h4>
             <button 
               onClick={() => setShowSettings(false)}
-              className="text-blue-400 hover:text-blue-600"
+              className="text-gray-400 hover:text-gray-600 text-xl p-1 rounded-full hover:bg-gray-100 transition-all duration-200"
               aria-label="Close settings"
             >
-              &times;
+              ×
             </button>
           </div>
+          
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-blue-600 mb-1">Microphone</label>
+            <div className="group">
+              <label className="block text-sm font-medium text-blue-700 mb-2">Microphone</label>
               <select 
-                className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100"
+                className="w-full bg-gradient-to-r from-blue-50 to-white rounded-xl p-3 text-sm border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                 disabled={!mediaState.hasAudio}
               >
                 <option>Default Microphone</option>
               </select>
               {!mediaState.hasAudio && (
-                <p className="text-xs text-red-500 mt-1">Microphone access denied</p>
+                <p className="text-xs text-red-500 mt-1 animate-pulse">Microphone access denied</p>
               )}
             </div>
+            
             {mediaState.hasVideo && (
-              <div>
-                <label className="block text-sm text-blue-600 mb-1">Camera</label>
-                <select className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100">
+              <div className="group">
+                <label className="block text-sm font-medium text-blue-700 mb-2">Camera</label>
+                <select className="w-full bg-gradient-to-r from-blue-50 to-white rounded-xl p-3 text-sm border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all duration-200">
                   <option>Default Camera</option>
                 </select>
               </div>
             )}
-            <div>
-              <label className="block text-sm text-blue-600 mb-1">Speaker</label>
-              <select className="w-full bg-blue-50 rounded p-2 text-sm border border-blue-100">
+            
+            <div className="group">
+              <label className="block text-sm font-medium text-blue-700 mb-2">Speaker</label>
+              <select className="w-full bg-gradient-to-r from-blue-50 to-white rounded-xl p-3 text-sm border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all duration-200">
                 <option>Default Speaker</option>
               </select>
+            </div>
+            
+            {/* Additional settings */}
+            <div className="border-t border-blue-100 pt-4 mt-4">
+              <h5 className="text-sm font-medium text-blue-700 mb-3">Call Quality</h5>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">HD Video</span>
+                <div className="relative">
+                  <input type="checkbox" defaultChecked className="sr-only" />
+                  <div className="w-10 h-6 bg-blue-200 rounded-full shadow-inner transition-all duration-200 cursor-pointer">
+                    <div className="w-4 h-4 bg-blue-600 rounded-full shadow transform translate-x-4 transition-transform duration-200"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Custom CSS for additional animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out;
+        }
+        
+        .animate-slideUp {
+          animation: slideUp 0.5s ease-out;
+        }
+        
+        .animate-slideDown {
+          animation: slideDown 0.5s ease-out;
+        }
+        
+        .hover\:shadow-3xl:hover {
+          box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .backdrop-blur-lg {
+          backdrop-filter: blur(16px);
+        }
+      `}</style>
     </div>
   );
 };

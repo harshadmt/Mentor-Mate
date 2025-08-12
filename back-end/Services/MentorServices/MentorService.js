@@ -1,6 +1,10 @@
 const User = require('../../models/usermodel');
 const Roadmap = require('../../models/roadmapModel');
 const Payment = require('../../models/paymentModel');
+const videoSession =require ('../../models/videoModel');
+const StudentEnrollment = require('../../models/studentEnrollmentModel');
+const mongoose = require('mongoose')
+
 
 const mentorService = {
   getMentorsForPurchasedRoadmaps: async (studentId) => {
@@ -142,7 +146,48 @@ const mentorService = {
     } catch (error) {
       throw new Error(`Error fetching student: ${error.message}`);
     }
-  }
+  },
+
+getDashboardStats: async (mentorId) => {
+  const totalRoadmaps = await Roadmap.countDocuments({ createdBy: mentorId });
+
+  // Active students from completed sessions
+  const activeStudents = await videoSession.distinct('student', {
+    mentor: mentorId,
+    status: 'completed',
+  });
+
+  // Total sessions
+  const totalSessions = await videoSession.countDocuments({
+    mentor: mentorId,
+  });
+
+  // Roadmap IDs created by mentor
+  const roadmapIds = await Roadmap.distinct('_id', { createdBy: mentorId });
+
+  // Students who unlocked any of mentor's roadmaps
+  const unlockedRoadmapStudents = await User.countDocuments({
+    role: 'student',
+    unlockedRoadmaps: { $in: roadmapIds },
+  });
+
+  return {
+    totalRoadmaps,
+    activeStudents: activeStudents.length,
+    unlockedRoadmapStudents,
+    totalSessions,
+  };
+},
+
+getRecentRoadmaps: async (mentorId, limit = 5) => {
+  const mentorObjectId = new mongoose.Types.ObjectId(mentorId);
+  return await Roadmap.find({
+    createdBy: mentorObjectId
+  })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .select("title createdAt");
+}
 };
 
 module.exports = mentorService;

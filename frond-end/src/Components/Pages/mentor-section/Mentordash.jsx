@@ -27,8 +27,13 @@ import { motion } from "framer-motion";
 const MentorDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [dashboardData, setDashboardData] = useState({
+    roadmaps: 0,
+    students: 0,
+    completionRate: "0%",
+    nextSession: "Not scheduled"
+  });
+  const [recentRoadmaps, setRecentRoadmaps] = useState([]);
   const navigate = useNavigate();
 
   const { user, logout } = useUserStore();
@@ -49,31 +54,40 @@ const MentorDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        // Simulate API calls
-        const [statsRes, activitiesRes] = await Promise.all([
-          // Replace with actual API calls
-          new Promise(resolve => setTimeout(() => resolve({
-            data: {
-              roadmaps: 4,
-              students: 12,
-              completionRate: "87%",
-              nextSession: "Tomorrow 5 PM"
-            }
-          }), 1000)),
-          new Promise(resolve => setTimeout(() => resolve({
-            data: [
-              { student: "Alice Johnson", action: "Completed React Fundamentals", time: "2 hours ago" },
-              { student: "Bob Smith", action: "Started Advanced JavaScript", time: "4 hours ago" },
-              { student: "Carol Davis", action: "Scheduled 1:1 session", time: "1 day ago" },
-            ]
-          }), 1200))
-        ]);
 
-        setDashboardData(statsRes.data);
-        setRecentActivities(activitiesRes.data);
+        const [statsRes, roadmapsRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/mentor/dashboard/stats", { withCredentials: true }),
+          axios.get("http://localhost:5000/api/mentor/dashboard/recentRoadmaps", { withCredentials: true })
+        ]);
+        
+        // Handle stats response
+        if (statsRes.data?.success) {
+          const apiData = statsRes.data.data || {};
+          setDashboardData({
+            roadmaps: apiData.totalRoadmaps || 0,
+            students: apiData.unlockedRoadmapStudents || 0, // Changed from activeStudents to unlockedRoadmapStudents
+            completionRate: apiData.completionRate || "0%",
+            nextSession: apiData.nextSession || "Not scheduled"
+          });
+        }
+
+        // Handle roadmaps response
+        if (roadmapsRes.data?.success) {
+          setRecentRoadmaps(roadmapsRes.data.data || []);
+        } else {
+          setRecentRoadmaps([]);
+        }
       } catch (error) {
         toast.error("Failed to load dashboard data. Please try again later.");
-        console.error(error);
+        console.error("Dashboard error:", error);
+        // Reset to default values on error
+        setDashboardData({
+          roadmaps: 0,
+          students: 0,
+          completionRate: "0%",
+          nextSession: "Not scheduled"
+        });
+        setRecentRoadmaps([]);
       } finally {
         setIsLoading(false);
       }
@@ -205,31 +219,31 @@ const MentorDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatCard 
                 title="Created Roadmaps" 
-                value={dashboardData?.roadmaps || "0"} 
+                value={dashboardData.roadmaps} 
                 icon={<BookPlus size={24} />} 
                 gradient="from-blue-500 to-blue-600" 
                 bgGradient="from-blue-50 to-blue-100" 
                 change="+2 this month" 
               />
               <StatCard 
-                title="Active Students" 
-                value={dashboardData?.students || "0"} 
+                title="Students with Roadmaps" 
+                value={dashboardData.students} 
                 icon={<Users size={24} />} 
                 gradient="from-green-500 to-green-600" 
                 bgGradient="from-green-50 to-green-100" 
-                change="+3 this week" 
+                change={`${dashboardData.students > 0 ? '+' + dashboardData.students : 'No'} students`} 
               />
               <StatCard 
                 title="Completion Rate" 
-                value={dashboardData?.completionRate || "0%"} 
+                value={dashboardData.completionRate} 
                 icon={<TrendingUp size={24} />} 
                 gradient="from-purple-500 to-purple-600" 
                 bgGradient="from-purple-50 to-purple-100" 
-                change="+5% this month" 
+                change="+5% from last month" 
               />
               <StatCard 
                 title="Next Session" 
-                value={dashboardData?.nextSession || "Not scheduled"} 
+                value={dashboardData.nextSession} 
                 icon={<Clock size={24} />} 
                 gradient="from-orange-500 to-orange-600" 
                 bgGradient="from-orange-50 to-orange-100" 
@@ -241,30 +255,41 @@ const MentorDashboard = () => {
               <div className="lg:col-span-2">
                 <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800">Recent Activity</h3>
-                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
+                    <h3 className="text-xl font-semibold text-gray-800">Recent Roadmaps</h3>
+                    <button 
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      onClick={() => navigate("/mentor/roadmaps")}
+                    >
+                      View All
+                    </button>
                   </div>
-                  {recentActivities.length === 0 ? (
+                  {!recentRoadmaps || recentRoadmaps.length === 0 ? (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3 }}
                       className="text-center py-20"
                     >
-                      <p className="text-gray-500">No recent activities found</p>
+                      <p className="text-gray-500">No roadmaps created yet</p>
                     </motion.div>
                   ) : (
                     <div className="space-y-4">
-                      {recentActivities.map((activity, index) => (
-                        <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all duration-200">
+                      {recentRoadmaps.map((roadmap) => (
+                        <div 
+                          key={roadmap._id || Math.random().toString(36).substring(2, 9)} 
+                          className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all duration-200 cursor-pointer"
+                          onClick={() => roadmap._id && navigate(`/mentor/roadmap/${roadmap._id}`)}
+                        >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-500 flex items-center justify-center text-white font-medium">
-                            {activity.student.charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-800">{activity.student}</p>
-                            <p className="text-sm text-gray-600">{activity.action}</p>
+                            <p className="font-medium text-gray-800">{roadmap.title || "Untitled Roadmap"}</p>
+                            <p className="text-sm text-gray-600">
+                            </p>
                           </div>
-                          <div className="text-xs text-gray-400">{activity.time}</div>
+                          <div className="text-xs text-gray-400">
+                            {roadmap.createdAt ? `Created: ${new Date(roadmap.createdAt).toLocaleDateString()}` : ""}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -294,7 +319,11 @@ const MentorDashboard = () => {
                     <h3 className="text-lg font-semibold text-yellow-800">Achievement</h3>
                   </div>
                   <p className="text-yellow-700 mb-2">Congratulations! 🎉</p>
-                  <p className="text-sm text-yellow-600">You've helped 5 students complete their roadmaps this month!</p>
+                  <p className="text-sm text-yellow-600">
+                    {dashboardData.students > 0 
+                      ? `You have ${dashboardData.students} students using your roadmaps! Keep inspiring!`
+                      : "Start creating roadmaps to help students learn!"}
+                  </p>
                 </div>
               </div>
             </div>

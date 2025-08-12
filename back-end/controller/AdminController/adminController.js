@@ -1,4 +1,4 @@
-const { getAllUsersService, BlockUserServices,getAllRoadmapsService, getRoadmapsbyIdServices,getUserByIdService } = require('../../Services/AdminServices/AdminServices');
+const { getAllUsersService, BlockUserServices,getAllRoadmapsService,getUserDetailsWithPaymentServices, getRoadmapsbyIdServices,getUserByIdService,getAllTransactionsServices ,getSettings,updateSettings,updateAdminProfile,getAdminProfile} = require('../../Services/AdminServices/AdminServices');
 const Roadmap = require('../../models/roadmapModel');
 const Payment = require('../../models/paymentModel');
 const User = require('../../models/usermodel');
@@ -126,7 +126,95 @@ const getAdminStats = async (req,res)=>{
     console.error('Error fetching admin stats:',error);
     res.status(500).json({message:'server error'})
   }
+};
+const getUserDetailsWithPayments = async (req,res,next)=>{
+  try{
+    const {id} = req.params ;
+    const data  = await getUserDetailsWithPaymentServices(id);
+
+
+    res.status(200).json({
+      success:true,
+      data
+    });
+  }catch(error){
+    next(error)
+  }
+};
+const getAlltransactions = async (req, res, next) => {
+  try {
+    const payments = await getAllTransactionsServices();
+
+    res.status(200).json({
+      success: true,
+      count: payments.length,
+      payments,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAdminSettings  = async (req,res,next)=>{
+  try{
+    const settings = await getSettings();
+    res.status(200).json({
+      success:true,
+      data:settings
+    })
+  }catch(error){
+    next(error)
+  }
 }
+
+const updatedAdminSettings = async (req,res,next)=> {
+  try {
+    const updates  = req.body;
+    const updatedSetting = await updateSettings(updates);
+    res.status(200).json({
+      success:true,
+      message:"setting updated successfully",
+      data:updatedSetting
+    })
+  }catch(error){
+    next(error)
+  }
+}
+
+const updateAdminProfiles = async (req,res,next)=>{
+   try {
+    const adminId = req.user.id;
+    const updatedAdmin = await updateAdminProfile(adminId, req.body);
+
+    if (!updatedAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found or unauthorized'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin profile updated successfully',
+      data: updatedAdmin
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+const getAdminProfiles = async (req, res, next) => {
+  try {
+    const adminId = req.user.id; // Assuming user id comes from auth middleware
+    const profile = await getAdminProfile(adminId);
+    res.status(200).json({
+      success: true,
+      data: profile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   getAllUsers,
   BlockUsers,
@@ -137,4 +225,10 @@ module.exports = {
   getAllPayments,
   getUserById,
   getAdminStats,
+  getUserDetailsWithPayments,
+  getAlltransactions,
+  getAdminSettings,
+  updatedAdminSettings,
+  updateAdminProfiles,
+  getAdminProfiles,
 };

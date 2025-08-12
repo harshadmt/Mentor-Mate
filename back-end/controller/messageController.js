@@ -78,7 +78,7 @@ const getMessages = async (req, res, next) => {
 };
 const getLatestMessage = async (req, res) => {
   try {
-    const studentId = req.user._id; 
+    const studentId = req.user.id; 
     
 
     const latestMessage = await Message.findOne({ receiver: studentId })

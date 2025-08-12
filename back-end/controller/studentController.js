@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/usermodel');
 const Roadmap = require('../models/roadmapModel');
 const mentorService = require('../Services/MentorServices/MentorService');
-
+const {getStudentStats,getLatestMessageForStudent,getLatestNotificationForStudent,getUpcomingSessionsForStudent}=require('../Services/Studentervices/studentService')
 exports.getUnlockedRoadmaps = async (req, res, next) => {
   try {
     const student = await User.findById(req.user.id)
@@ -171,3 +171,56 @@ exports.getMentorDetailsById = async (req, res, next) => {
     });
   }
 };
+exports.getDashboardStats = async(req,res,next)=>{
+  try{
+    if(!req.user?.id){
+      return res.status(403).json({
+        success:false,
+        message :'Not authorized'
+      });
+    }
+
+    const stats = await getStudentStats(req.user.id);
+    return res.status(200).json({success:true,data:stats})
+  }catch(error){
+    next(error)
+  }
+};
+exports.getLatestMessages = async(req,res,next)=>{
+ try{
+    const studentId = req.user.id;  
+    const latestMessage = await getLatestMessageForStudent(studentId)
+    res.status(200).json({
+      success:true,
+      data:latestMessage
+    })
+    }catch(error){
+    next(error)
+   }
+}
+
+exports.getLatestNotification = async (req,res,next)=>{
+  try{
+     const studentId = req.user.id;
+     const LatestNotification = await getLatestNotificationForStudent(studentId);
+     res.status(200).json({
+      success:true,
+      data:LatestNotification
+     });
+  }catch(error){
+    next(error)
+  }
+};
+
+exports.getStudentUpcomingSessions = async (req,res,next)=>{
+  try{
+    const studentId = req.user.id;
+    const sessions = await getUpcomingSessionsForStudent(studentId);
+    res.status(200).json({
+      success :true,
+      data:sessions
+    })
+  }catch(error){
+    next(error)
+  }
+}

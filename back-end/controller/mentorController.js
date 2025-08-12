@@ -40,7 +40,43 @@ const getStudentById = async (req, res, next) => {
   }
 };
 
+const getMentorDashboardStats = async (req,res,next)=>{
+ try {
+    const mentorId = req.user.id; 
+
+    const stats = await mentorService.getDashboardStats(mentorId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Mentor dashboard stats fetched successfully',
+      data: stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+const getRecentRoadmap = async (req, res, next) => {
+  try {
+    console.log("mentorId from auth:", req.user.mentorId);
+
+    if (!req.user?.mentorId) {
+      return res.status(403).json({ success: false, message: "Not authorized as mentor" });
+    }
+
+    const limit = parseInt(req.query.limit) || 5;
+    const roadmaps = await mentorService.getRecentRoadmaps(req.user.mentorId, limit);
+
+    return res.status(200).json({ success: true, data: roadmaps });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getStudentsByMentor,
   getStudentById,
+  getMentorDashboardStats,
+  getRecentRoadmap
 };
