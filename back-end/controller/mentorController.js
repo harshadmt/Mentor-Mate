@@ -59,8 +59,6 @@ const getMentorDashboardStats = async (req,res,next)=>{
 
 const getRecentRoadmap = async (req, res, next) => {
   try {
-    console.log("mentorId from auth:", req.user.mentorId);
-
     if (!req.user?.mentorId) {
       return res.status(403).json({ success: false, message: "Not authorized as mentor" });
     }

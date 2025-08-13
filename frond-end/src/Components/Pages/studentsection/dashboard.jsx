@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
+import DialogBox from './aiBox';
 import "react-toastify/dist/ReactToastify.css";
 import {
   GraduationCap,
@@ -14,9 +15,11 @@ import {
   Menu,
   X,
   Clock,
+  Plus,
 } from "lucide-react";
 import useUserStore from "../../../../zustore/store";
 import { motion } from "framer-motion";
+import { BsRobot } from "react-icons/bs";
 
 const StudentDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,6 +28,7 @@ const StudentDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [latestMessage, setLatestMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     purchasedMentorCount: 0,
@@ -433,6 +437,21 @@ const StudentDashboard = () => {
               </Card>
             </div>
           </div>
+          {/* Floating Action Button */}
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => setIsDialogOpen(true)}
+  className="fixed bottom-8 right-8 z-40 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+>
+  <BsRobot className="w-6 h-6" />
+</motion.button>
+
+{/* Dialog Box Component */}
+<DialogBox 
+  isOpen={isDialogOpen} 
+  onClose={() => setIsDialogOpen(false)} 
+/>
         </main>
       </div>
     </>

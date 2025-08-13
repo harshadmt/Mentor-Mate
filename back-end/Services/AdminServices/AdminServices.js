@@ -144,7 +144,7 @@ const  getSettings =  async () => {
   }
 
 const getAdminProfile = async (adminId) => {
-  // Find admin by ID and role = 'admin'
+  
   const admin = await User.findOne({ _id: adminId, role: 'admin' }).select('-password');
   if (!admin) {
     throw new Error('Admin not found or unauthorized');

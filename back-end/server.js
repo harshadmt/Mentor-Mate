@@ -24,6 +24,7 @@ const VideoSessionRoutes = require('./router/videoSessionRoute');;
 const notificationRoutes = require('./router/notificationRouter')
 const adminRoutes = require('./router/AdminRoutes')
 const errorHandling = require('./middleware/errorMiddleWare');
+const chatbotRoutes = require('./router/chatbotRoute')
 
 
 const app = express();
@@ -140,7 +141,7 @@ app.set('io', io);
 //API Routes
 app.use('/api/auth',authRoutes);
 app.use('/api', protectedRoute);
-app.use('/api/roadmaps', RoadmapRoutes);
+app.use('/api/roadmaps',maintenanceMiddleware, RoadmapRoutes);
 app.use('/api/user', userRoute);
 app.use('/api/payment', paymentRouter);
 app.use('/api/student',maintenanceMiddleware, studentRouter);
@@ -148,6 +149,7 @@ app.use('/api/message', messageRoutes);
 app.use('/api/mentor',maintenanceMiddleware,mentorRoutes);
 app.use('/api/videosession', VideoSessionRoutes);
 app.use('/api/notifications',notificationRoutes);
+app.use('/api/chatbot',chatbotRoutes)
 app.use('/api/admin',adminRoutes)
 
 
